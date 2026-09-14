@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import { useAdminSession } from "@/lib/useAdminSession";
 import { supabase } from "@/lib/supabaseClient";
 import { approvalStatuses } from "@/lib/constants";
@@ -68,6 +69,14 @@ export default function ConventionDisplayPage({ params }) {
                 <section className="flex h-full flex-col items-center justify-center text-center">
                     <p className="eyebrow mb-3 text-xl">Latest captures</p>
                 </section>
+
+                {/* Return Link */}
+            <Link
+                href={`/admin/conventions/${conventionId}`}
+                className="absolute bottom-6 left-6 font-mono text-xs text-parchment/40 transition-colors hover:text-parchment"
+            >
+                ← Return
+            </Link>
             </div>
         </div>
     );
