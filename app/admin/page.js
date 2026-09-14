@@ -73,7 +73,7 @@ export default function AdminDashboard() {
 
       <div className="grid gap-8 sm:grid-cols-2">
         <section>
-          <h2 className="mb-4 font-display text-xl font-bold">Manage existing</h2>
+          <h2 className="mb-4 font-display text-xl font-bold">View existing</h2>
           {fetching && <p className="text-parchment/50">Loading…</p>}
           {!fetching && conventions.length === 0 && (
             <div className="card-shell">

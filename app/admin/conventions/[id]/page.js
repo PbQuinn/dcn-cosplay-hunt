@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useAdminSession } from "@/lib/useAdminSession";
-import SubmissionList from "./SubmissionsList";
+import { SubmissionList, ApprovalList } from "./PlayerLists";
 import LeaderBoard from "./LeaderBoard";
 import Link from "next/link";
 
@@ -16,18 +16,21 @@ export default function AdminConventionPage({ params }) {
   const [convention, setConvention] = useState(null);
   const [leaderBoard, setLeaderBoard] = useState([]);
   const [submissions, setSubmissions] = useState([]);
-  const [tab, setTab] = useState("characters");
+  const [approval, setApproval] = useState([]);
+  const [tab, setTab] = useState("approval");
 
   const loadAll = useCallback(async () => {
-    const [{ data: conv }, { data: leaderboard }, { data: subs }] = await Promise.all([
+    const [{ data: conv }, { data: leaderboard }, { data: subs }, {data: apps}] = await Promise.all([
       supabase.from("conventions").select("*").eq("id", conventionId).single(),
       supabase.from("players").select("*").eq("convention_id", conventionId).eq("invisible", false).eq("approved", approvalStatuses.APPROVED).order("score", { ascending: false }),
       supabase.from("players").select("*").eq("convention_id", conventionId).order("created_at", { ascending: false }),
+      supabase.from("players").select("*").eq("convention_id", conventionId).eq("approved", approvalStatuses.PENDING).order("created_at", { ascending: false }),
     ]);
 
     setConvention(conv ?? null);
     setLeaderBoard(leaderboard ?? []);
     setSubmissions(subs ?? []);
+    setApproval(apps ?? []);
   }, [conventionId]);
 
   useEffect(() => {
@@ -43,8 +46,9 @@ export default function AdminConventionPage({ params }) {
   }
 
   const tabs = [
-    { id: "leaderboard", label: `Leaderboard` },
+    { id: "approval", label: `Approval (${approval.length})` },
     { id: "submissions", label: `Submissions (${submissions.length})` },
+    { id: "leaderboard", label: `Leaderboard` },
   ];
 
   return (
@@ -74,9 +78,9 @@ export default function AdminConventionPage({ params }) {
         ))}
       </div>
 
-      {tab === "leaderboard" && <LeaderBoard leaderBoard={leaderBoard} />
-      }
+      {tab === "approval" && <ApprovalList submissions={approval} />}
       {tab === "submissions" && <SubmissionList submissions={submissions} />}
+      {tab === "leaderboard" && <LeaderBoard leaderBoard={leaderBoard} />}
     </div>
   );
 }
