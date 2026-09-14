@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { useAdminSession } from "@/lib/useAdminSession";
 import SubmissionList from "./SubmissionsList";
 import LeaderBoard from "./LeaderBoard";
+import Link from "next/link";
 
 import { approvalStatuses } from "@/lib/constants";
 
@@ -48,6 +49,15 @@ export default function AdminConventionPage({ params }) {
 
   return (
     <div>
+      {/* Back Button Wrapper */}
+      <div className="mb-8">
+        <Link href="/admin">
+          <button type="button" className="btn-primary">
+            ← Back to dashboard
+          </button>
+        </Link>
+      </div>
+
       <p className="eyebrow mb-3">Admin · Convention</p>
       <h1 className="mb-8 text-4xl font-bold">{convention.name}</h1>
 
@@ -56,18 +66,17 @@ export default function AdminConventionPage({ params }) {
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
-            className={`font-mono text-xs uppercase tracking-wide ${
-              tab === t.id ? "text-flare" : "text-parchment/50 hover:text-parchment"
-            }`}
+            className={`font-mono text-xs uppercase tracking-wide ${tab === t.id ? "text-flare" : "text-parchment/50 hover:text-parchment"
+              }`}
           >
             {t.label}
           </button>
         ))}
       </div>
 
-      {tab === "leaderboard" && <LeaderBoard leaderBoard={leaderBoard}/>
+      {tab === "leaderboard" && <LeaderBoard leaderBoard={leaderBoard} />
       }
-      {tab === "submissions" &&  <SubmissionList submissions={submissions} />}
+      {tab === "submissions" && <SubmissionList submissions={submissions} />}
     </div>
   );
 }
