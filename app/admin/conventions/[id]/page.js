@@ -22,7 +22,7 @@ export default function AdminConventionPage({ params }) {
   const loadAll = useCallback(async () => {
     const [{ data: conv }, { data: leaderboard }, { data: subs }, {data: apps}] = await Promise.all([
       supabase.from("conventions").select("*").eq("id", conventionId).single(),
-      supabase.from("players").select("*").eq("convention_id", conventionId).eq("invisible", false).eq("approved", approvalStatuses.APPROVED).order("score", { ascending: false }),
+      supabase.from("players").select("*").eq("convention_id", conventionId).eq("approved", approvalStatuses.APPROVED).order("score", { ascending: false }),
       supabase.from("players").select("*").eq("convention_id", conventionId).order("created_at", { ascending: false }),
       supabase.from("players").select("*").eq("convention_id", conventionId).eq("approved", approvalStatuses.PENDING).order("created_at", { ascending: false }),
     ]);
@@ -81,6 +81,15 @@ export default function AdminConventionPage({ params }) {
       {tab === "approval" && <ApprovalList submissions={approval} />}
       {tab === "submissions" && <SubmissionList submissions={submissions} />}
       {tab === "leaderboard" && <LeaderBoard leaderBoard={leaderBoard} />}
+
+      {/* Display view */}
+      <div className="mb-4">
+        <Link href={`/admin/conventions/${conventionId  }/display`}>
+          <button type="button" className="btn-primary">
+            Switch to Display view
+          </button>
+        </Link>
+      </div>
     </div>
   );
 }

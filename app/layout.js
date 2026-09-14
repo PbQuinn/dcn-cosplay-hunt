@@ -1,4 +1,7 @@
+"use client";
+
 import { Space_Grotesk, Inter, JetBrains_Mono } from "next/font/google";
+import { usePathname } from "next/navigation";
 import "./globals.css";
 
 const display = Space_Grotesk({
@@ -19,32 +22,40 @@ const mono = JetBrains_Mono({
   variable: "--font-mono",
 });
 
-export const metadata = {
-  title: "Cosplay Safari | Spot the Cosplay",
-  description: "Field guide bingo for spotting cosplayers at your convention.",
-};
-
 export default function RootLayout({ children }) {
+  const pathname = usePathname();
+  
+  // Check if current route is the display page
+  const isDisplayPage = pathname?.endsWith("/display");
+
   return (
     <html lang="en" className={`${display.variable} ${body.variable} ${mono.variable}`}>
       <body className="min-h-screen bg-grain">
-        <header className="border-b border-parchment/10">
-          <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
-            <a href="/" className="flex items-baseline gap-2">
-              <span className="font-display text-xl font-bold tracking-tight">
-                Cosplay Safari
-              </span>
-              <span className="eyebrow hidden sm:inline">Field Guide Edition</span>
-            </a>
-            <nav className="font-mono text-xs uppercase tracking-widest text-parchment/60">
-              <a href="/admin" className="hover:text-flare">Admin</a>
-            </nav>
-          </div>
-        </header>
-        <main className="mx-auto max-w-5xl px-6 py-10">{children}</main>
-        <footer className="mx-auto max-w-5xl px-6 py-10 text-xs text-parchment/40">
-          Built for spotting cosplayers, one square at a time.
-        </footer>
+        {!isDisplayPage && (
+          <header className="border-b border-parchment/10">
+            <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
+              <a href="/" className="flex items-baseline gap-2">
+                <span className="font-display text-xl font-bold tracking-tight">
+                  Cosplay Safari
+                </span>
+                <span className="eyebrow hidden sm:inline">Field Guide Edition</span>
+              </a>
+              <nav className="font-mono text-xs uppercase tracking-widest text-parchment/60">
+                <a href="/admin" className="hover:text-flare">Admin</a>
+              </nav>
+            </div>
+          </header>
+        )}
+
+        <main className={isDisplayPage ? "" : "mx-auto max-w-5xl px-6 py-10"}>
+          {children}
+        </main>
+
+        {!isDisplayPage && (
+          <footer className="mx-auto max-w-5xl px-6 py-10 text-xs text-parchment/40">
+            Built for spotting cosplayers, one square at a time.
+          </footer>
+        )}
       </body>
     </html>
   );
