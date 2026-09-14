@@ -20,7 +20,7 @@ export default function AdminConventionPage({ params }) {
   const loadAll = useCallback(async () => {
     const [{ data: conv }, { data: leaderboard }, { data: subs }] = await Promise.all([
       supabase.from("conventions").select("*").eq("id", conventionId).single(),
-      supabase.from("players").select("*").eq("id", conventionId).eq("invisible", false).eq("approved", approvalStatuses.APPROVED).order("score", { ascending: false }),
+      supabase.from("players").select("*").eq("convention_id", conventionId).eq("invisible", false).eq("approved", approvalStatuses.APPROVED).order("score", { ascending: false }),
       supabase.from("players").select("*").eq("convention_id", conventionId).order("created_at", { ascending: false }),
     ]);
 
