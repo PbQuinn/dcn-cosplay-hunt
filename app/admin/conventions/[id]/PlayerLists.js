@@ -41,7 +41,7 @@ export function SubmissionList({ submissions }) {
               <span className="text-parchment/60">with a score of {s.score}</span>
             </span>
             <span className="font-mono text-[10px] text-parchment/30">
-              {formatDate(s.created_at)}
+              Created at {formatDate(s.created_at)}
             </span>
           </li>
         ))}
@@ -91,7 +91,7 @@ export function ApprovalList({ submissions }) {
               )}
             </span>
             <span className="font-mono text-[10px] text-parchment/30">
-              {formatDate(s.created_at)}
+              Created at {formatDate(s.created_at)}
             </span>
           </li>
         ))}
