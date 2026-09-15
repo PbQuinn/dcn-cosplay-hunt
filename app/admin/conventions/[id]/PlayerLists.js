@@ -33,7 +33,11 @@ export function SubmissionList({ submissions }) {
           >
             <span>
               <strong>{s.name}</strong>{" "}
-              <span className="text-parchment/60">as {s.character}</span>{" "}
+              {!s.invisible && (
+                <>
+                  <span className="text-parchment/60">as {s.character}</span>{" "}
+                </>
+              )}
               <span className="text-parchment/60">with a score of {s.score}</span>
             </span>
             <span className="font-mono text-[10px] text-parchment/30">
@@ -80,7 +84,11 @@ export function ApprovalList({ submissions }) {
           >
             <span>
               <strong>{s.submitter_name}</strong>{" "}
-              <span className="text-parchment/60">as {s.character_name}</span>
+              {!s.invisible && (
+                <>
+                  <span className="text-parchment/60">as {s.character}</span>{" "}
+                </>
+              )}
             </span>
             <span className="font-mono text-[10px] text-parchment/30">
               {formatDate(s.created_at)}
