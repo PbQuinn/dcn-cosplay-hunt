@@ -45,7 +45,7 @@ export default function ConventionDisplayPage({ params }) {
                 <section className="flex h-full flex-col items-center justify-center text-center border-r border-gray-700">
                     <p className="eyebrow mb-3 text-xl">Leaderboard</p>
                     <div className="w-full">
-                        <LeaderBoard leaderBoard={leaderBoard} />
+                        <LeaderBoard leaderBoard={leaderBoard} displayAmount={10} />
                     </div>
 
                     <p className="eyebrow mb-3 mt-6 text-xl">How to play</p>
