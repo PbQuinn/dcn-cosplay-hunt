@@ -73,7 +73,7 @@ function Avatar({ src, name, className = "h-10 w-10 rounded-full text-xs" }) {
 // ---------------------------------------------------------------------------
 // Modal shell — bottom sheet on mobile, centered dialog from sm: up
 // ---------------------------------------------------------------------------
-function Modal({ onClose, labelledBy, children }) {
+export function Modal({ onClose, labelledBy, children }) {
   useEffect(() => {
     function onKey(e) {
       if (e.key === "Escape") onClose();
@@ -106,7 +106,7 @@ function Modal({ onClose, labelledBy, children }) {
   );
 }
 
-function ModalCloseButton({ onClose }) {
+export function ModalCloseButton({ onClose }) {
   return (
     <button
       onClick={onClose}
@@ -308,7 +308,7 @@ function BlankTarget({ conventionId, hunterId, onNewTargets }) {
 // ---------------------------------------------------------------------------
 // Modal contents
 // ---------------------------------------------------------------------------
-function TargetInfoContent({ target, onClose }) {
+export function TargetInfoContent({ target, onClose }) {
   const [errored, setErrored] = useState(false);
   const showImage = Boolean(target.photoUrl) && !errored;
 
