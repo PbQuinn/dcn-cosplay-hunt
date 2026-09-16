@@ -5,7 +5,6 @@ import { getCurrentConvention } from "@/lib/common_queries";
 
 export default async function Page() {
   let conventionData = await getCurrentConvention();
-  console.log(conventionData)
   let hunterData;
 
   if (conventionData) {

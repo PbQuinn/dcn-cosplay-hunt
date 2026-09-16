@@ -9,11 +9,14 @@ create extension if not exists "pgcrypto";
 create table if not exists conventions (
   id uuid primary key default gen_random_uuid(),
   name text not null,
-  description text,
-  image_url text,
+  theme text,
+  logo_url text,
   start_date date not null,
   end_date date not null,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  times text,
+  venue text,
+  address text
 );
 
 create table if not exists players (

@@ -59,7 +59,6 @@ export async function createPlayer(conventionId, formData) {
         if (newTarget) {
             targetList.push(newTarget);
         }
-        console.log(targetList)
     }
 
     const newRow = {
@@ -79,8 +78,6 @@ export async function createPlayer(conventionId, formData) {
         image_url: photoPath,
 
     }
-
-    console.log("Cosplay Hunt submission:", newRow);
 
     const { error } = await supabase.from("players").insert(newRow);
 
