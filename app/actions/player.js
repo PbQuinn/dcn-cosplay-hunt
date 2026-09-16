@@ -11,18 +11,18 @@ import { stringFromTargetList } from "@/lib/targetList";
 export async function createPlayer(conventionId, formData) {
     const name = formData.get("name");
     const contact = formData.get("contact");
-    const character = formData.get("character");
-    const series = formData.get("series");
     const description = formData.get("description");
     const invisible = formData.get("invisible") === "true";
+    const character = formData.get("character");
+    const series = formData.get("series");
     const photo = formData.get("photo");
 
     // Validate
-    if (!name || !contact || !character || !series) {
+    if (!name) {
         throw new Error("Please fill in all required fields.");
     }
-    if (!invisible && !(photo instanceof File)) {
-        throw new Error("A photo is required when you are visible.");
+    if (!invisible && (!(photo instanceof File) && !(character instanceof File) && !(series instanceof File))) {
+        throw new Error("Please fill in all required fields.");
     }
 
     // Generate the player's permanent identifier on the server.
@@ -54,7 +54,7 @@ export async function createPlayer(conventionId, formData) {
     }
 
     let targetList = [];
-    for (let i =0; i < NR_TARGETS; i++) {
+    for (let i = 0; i < NR_TARGETS; i++) {
         let newTarget = await getNewTarget(conventionId, appUid);
         if (newTarget) {
             targetList.push(newTarget);

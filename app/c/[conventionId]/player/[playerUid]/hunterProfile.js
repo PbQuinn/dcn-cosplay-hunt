@@ -217,7 +217,7 @@ function TargetCard({ target, captured, onOpenInfo, onOpenCapture }) {
           {target?.character || "Unidentified cosplayer"}
         </h3>
         <p className="mt-1 font-body text-sm text-parchment/60">
-          {target?.name ? `Played by ${target?.name}` : "Identity unconfirmed"}
+          {target?.name ? `From ${target?.series}` : "Unidentified series"}
         </p>
       </div>
 
@@ -421,12 +421,12 @@ function HunterProfileContent({ hunter, score, photoUrl, onClose }) {
           className="h-16 w-16 rounded-2xl text-lg"
         />
         <div>
-          <Eyebrow>{hunter.series || "Unknown series"}</Eyebrow>
+          <Eyebrow>{hunter.series || "Invisible"}</Eyebrow>
           <h2
             id="hunter-profile-title"
             className="font-display text-[28px] leading-tight text-parchment"
           >
-            {hunter.character}
+            {hunter.character || hunter.name}
           </h2>
         </div>
       </div>
