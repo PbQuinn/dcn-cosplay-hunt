@@ -1,6 +1,6 @@
-# Cosplay Safari — spot-the-cosplay bingo
+# Cosplay Hunt — spot-the-cosplay bingo
 
-A small webapp for running a "cosplay safari" bingo challenge at conventions.
+A small webapp for running a "Cosplay Hunt" bingo challenge at conventions.
 Attendees log the character they're cosplaying and play a bingo card of
 characters expected at the con. Admins create conventions, add characters
 (with reference photos), and build bingo cards.
