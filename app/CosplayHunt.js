@@ -48,12 +48,12 @@ export default function CosplayHunt({ convention, hunter }) {
 
       formData.append("name", form.name);
       formData.append("contact", form.contact);
-      formData.append("character", form.character);
-      formData.append("series", form.series);
       formData.append("description", form.description);
       formData.append("invisible", String(form.invisible));
 
-      if (form.photo) {
+      if (!form.invisible) {
+        formData.append("character", form.character);
+        formData.append("series", form.series);
         formData.append("photo", form.photo);
       }
 
@@ -63,16 +63,16 @@ export default function CosplayHunt({ convention, hunter }) {
       setSaving(false);
     }
   }
-    
-      // setForm({
-      //   name: "",
-      //   contact: "",
-      //   character: "",
-      //   series: "",
-      //   description: "",
-      //   invisible: true,
-      //   photo: null,
-      // });
+
+  // setForm({
+  //   name: "",
+  //   contact: "",
+  //   character: "",
+  //   series: "",
+  //   description: "",
+  //   invisible: true,
+  //   photo: null,
+  // });
 
   return (
     <main className="min-h-screen">
@@ -116,14 +116,14 @@ export default function CosplayHunt({ convention, hunter }) {
           >
             Join The Game
           </button>}
-          {!!hunter && <div style={{display: "flex"}}>
+          {!!hunter && <div style={{ display: "flex" }}>
             Welcome back, {hunter.name}
             <a href={`c/${convention.id}/player/${hunter.app_uid}`}><button
-            type="link"
-            className="btn-primary mt-10 px-8 py-4 text-lg"
-          >
-            Go to my targets
-          </button></a></div>}
+              type="link"
+              className="btn-primary mt-10 px-8 py-4 text-lg"
+            >
+              Go to my targets
+            </button></a></div>}
         </div>
       </section>
 
@@ -186,7 +186,7 @@ export default function CosplayHunt({ convention, hunter }) {
                 Create your character
               </h2>
               <p className="mt-2 text-sm text-parchment/50">
-                Enter your cosplay details so other hunters can find you.
+                Enter your profile details so other hunters can find you.
               </p>
             </div>
 
@@ -227,53 +227,7 @@ export default function CosplayHunt({ convention, hunter }) {
                   placeholder="Email, Discord, Instagram, etc."
                   value={form.contact}
                   onChange={(e) => updateForm("contact", e.target.value)}
-                  required
                 />
-              </div>
-
-              {/* Character / Series */}
-              <div className="grid gap-5 sm:grid-cols-2">
-                <div>
-                  <label
-                    className="eyebrow mb-2 block"
-                    htmlFor="character"
-                  >
-                    Character
-                  </label>
-
-                  <input
-                    id="character"
-                    className="field-input"
-                    type="text"
-                    placeholder="Character name"
-                    value={form.character}
-                    onChange={(e) =>
-                      updateForm("character", e.target.value)
-                    }
-                    required
-                  />
-                </div>
-
-                <div>
-                  <label
-                    className="eyebrow mb-2 block"
-                    htmlFor="series"
-                  >
-                    Series
-                  </label>
-
-                  <input
-                    id="series"
-                    className="field-input"
-                    type="text"
-                    placeholder="Anime, game, movie, etc."
-                    value={form.series}
-                    onChange={(e) =>
-                      updateForm("series", e.target.value)
-                    }
-                    required
-                  />
-                </div>
               </div>
 
               {/* Description */}
@@ -319,12 +273,59 @@ export default function CosplayHunt({ convention, hunter }) {
                     </span>
 
                     <span className="mt-1 block text-sm text-parchment/50">
-                      Hide my cosplay from the public hunt. If unchecked,
+                      Hide my profile from the public hunt. If unchecked,
                       you must provide a photo.
                     </span>
                   </span>
                 </label>
               </div>
+
+              {/* Character / Series */}
+              {!form.invisible && (
+                <div className="grid gap-5 sm:grid-cols-2">
+                  <div>
+                    <label
+                      className="eyebrow mb-2 block"
+                      htmlFor="character"
+                    >
+                      Character
+                    </label>
+
+                    <input
+                      id="character"
+                      className="field-input"
+                      type="text"
+                      placeholder="Character name"
+                      value={form.character}
+                      onChange={(e) =>
+                        updateForm("character", e.target.value)
+                      }
+                      required={!form.invisible}
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      className="eyebrow mb-2 block"
+                      htmlFor="series"
+                    >
+                      Series
+                    </label>
+
+                    <input
+                      id="series"
+                      className="field-input"
+                      type="text"
+                      placeholder="Anime, game, movie, etc."
+                      value={form.series}
+                      onChange={(e) =>
+                        updateForm("series", e.target.value)
+                      }
+                      required={!form.invisible}
+                    />
+                  </div>
+                </div>
+              )}
 
               {/* Photo */}
               {!form.invisible && (

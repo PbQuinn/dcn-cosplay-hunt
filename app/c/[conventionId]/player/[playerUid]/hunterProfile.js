@@ -217,7 +217,7 @@ function TargetCard({ target, captured, onOpenInfo, onOpenCapture }) {
           {target?.character || "Unidentified cosplayer"}
         </h3>
         <p className="mt-1 font-body text-sm text-parchment/60">
-          {target?.name ? `Played by ${target?.name}` : "Identity unconfirmed"}
+          {target?.name ? `From ${target?.series}` : "Unidentified series"}
         </p>
       </div>
 
@@ -315,13 +315,19 @@ function TargetInfoContent({ target, onClose }) {
   return (
     <div className="relative pt-1">
       <ModalCloseButton onClose={onClose} />
+
       <div className="mb-4 flex aspect-[16/11] w-full items-center justify-center overflow-hidden rounded-2xl bg-ink">
         {showImage ? (
           <img
             src={target.photoUrl}
             alt={target.character}
             onError={() => setErrored(true)}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-cover object-center"
+            style={{
+              display: 'flex',
+              width: 'auto',
+              height: '120%',
+            }}
           />
         ) : (
           <span className="font-mono text-4xl text-parchment/40">
@@ -343,9 +349,9 @@ function TargetInfoContent({ target, onClose }) {
         </p>
       )}
 
-      <dl className="divide-y divide-parchment/10 border-t border-parchment/10">
-        <DetailRow label="Cosplayer" value={target.name || "Unconfirmed"} />
-      </dl>
+      <p>
+        See if you can spot {target.character}! Once you find them, ask for their 4-digit code to score points!
+      </p>
     </div>
   );
 }
@@ -431,12 +437,12 @@ function HunterProfileContent({ hunter, score, photoUrl, onClose }) {
           />
         </button>
         <div>
-          <Eyebrow>{hunter.series || "Unknown series"}</Eyebrow>
+          <Eyebrow>{hunter.series || "Invisible"}</Eyebrow>
           <h2
             id="hunter-profile-title"
             className="font-display text-[28px] leading-tight text-parchment"
           >
-            {hunter.character}
+            {hunter.character || hunter.name}
           </h2>
         </div>
       </div>
@@ -692,12 +698,13 @@ export default function HunterPage({ convention, hunter, targets }) {
           role="list"
           className="m-0 flex snap-x snap-mandatory gap-3.5 overflow-x-auto px-4 pb-2.5 pt-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          {displayTargets.map((target, i) => (
-            target ?
+          {displayTargets.map((target, i) => {
+            // console.log(setInfoTargetId);
+            return target ?
               <TargetCard
-                key={`${target.id}-${i}`}
+                key={`${target.app_uid}-${i}`}
                 target={target}
-                captured={capturedIds.has(target.id)}
+                captured={capturedIds.has(target.app_uid)}
                 onOpenInfo={setInfoTargetId}
                 onOpenCapture={setCaptureTarget}
               /> :
@@ -707,13 +714,14 @@ export default function HunterPage({ convention, hunter, targets }) {
                 hunterId={hunter?.app_uid}
                 onNewTargets={setCurrentTargets}
               />
-          ))}
+          })}
         </ul>
       </main>
 
       {infoTargetId && (
+
         <Modal labelledBy="target-info-title" onClose={() => setInfoTargetId(null)}>
-          <TargetInfoContent target={infoTargetId} onClose={() => setInfoTargetId(null)} />
+          <TargetInfoContent target={displayTargets.find((t) => t.app_uid === infoTargetId)} onClose={() => setInfoTargetId(null)} />
         </Modal>
       )}
 
