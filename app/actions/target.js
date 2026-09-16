@@ -8,8 +8,6 @@ import { stringFromTargetList, targetListFromString } from "@/lib/targetList";
 
 /* Get the UID of a random fellow hunter */
 export async function getNewTarget(conventionId, hunterId) {
-  console.log("New target for ", conventionId, hunterId)
-
   // TODO: Implement query that only considers records that are:
   // * not already in the logged captures
   // * not already in the target list of the current hunter
@@ -23,8 +21,6 @@ export async function getNewTarget(conventionId, hunterId) {
     .neq("app_uid", hunterId);
 
   let candidates = candidateTargetIds ? candidateTargetIds : [];
-
-  console.log("Candidates:", candidates);
   let index = Math.floor(Math.random() * candidates.length)
   let target = candidates[index];
   return target ? target.app_uid : undefined
@@ -50,18 +46,13 @@ export async function getHunterTargetIds(conventionId, hunterId) {
 export async function requestNewTargetAssignment(conventionId, hunterId) {
 
   let currentTargets = await getHunterTargetIds(conventionId, hunterId);
-  console.log("Current targets: ", currentTargets)
   // Don't add a target if the player is already capped
   if (currentTargets.length >= NR_TARGETS) return { newTarget: undefined, targets: currentTargets };
-
   const newTarget = await getNewTarget(conventionId, hunterId);
-  console.log("Newly selected target: ", newTarget);
 
   if (!newTarget) return { newTarget: undefined, targets: currentTargets }
 
   currentTargets.push(newTarget);
-  console.log("Updated target list", currentTargets)
-  console.log("string version: ", stringFromTargetList(currentTargets))
 
   const { data, error } = await supabase
     .from("players")
@@ -117,8 +108,6 @@ export async function checkPlayerCode(conventionId, targetId, code) {
     .eq("convention_id", conventionId)
     .eq("app_uid", targetId)
     .eq("code", code);
-
-  console.log(`Matches for code ${code} with player ${targetId}`, matches);
   // If there is a match, that means the code entered was correct (conventionId/targetAppUid pairs are unique)
   return matches?.length > 0
 }
@@ -132,7 +121,6 @@ async function incrementScore(conventionId, hunterId, value) {
       .eq("app_uid", hunterId)
       .single();
 
-    console.log("score", currentScore?.score);
     const newScore = currentScore?.score + value;
 
     await supabase
@@ -148,12 +136,8 @@ async function incrementScore(conventionId, hunterId, value) {
 
 /* Given a target and its code, award the player with score and remove the target from the list, returning the updated target list */
 export async function performCapture(conventionId, hunterId, targetId) {
-  console.log(conventionId, hunterId, targetId)
   let currentTargets = await getHunterTargetIds(conventionId, hunterId);
-    console.log(currentTargets);
   currentTargets = currentTargets.filter((id) => id != targetId);
-
-  console.log(currentTargets);
 
   const { data, error } = await supabase
     .from("players")
@@ -164,10 +148,7 @@ export async function performCapture(conventionId, hunterId, targetId) {
     const ret = { 
     targets: await getTargetProfiles(conventionId, hunterId), 
     score: await incrementScore(conventionId, hunterId, 1) 
-  }
-
-  console.log(ret)
-  
+  } 
 
   return ret
 }

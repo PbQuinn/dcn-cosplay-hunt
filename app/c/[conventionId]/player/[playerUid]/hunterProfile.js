@@ -262,7 +262,6 @@ function BlankTarget({ conventionId, hunterId, onNewTargets }) {
   return (
     <li className="flex w-[76vw] max-w-[320px] flex-none snap-center flex-col gap-2.5 rounded-2xl border border-parchment/10 bg-ink-light p-2.5">
       <button
-        onClick={() => console.log("Hi!")}
         aria-label={`Request new`}
         className="relative block aspect-[4/5] w-full cursor-pointer overflow-hidden rounded-xl bg-ink"
       >
@@ -699,7 +698,6 @@ export default function HunterPage({ convention, hunter, targets }) {
           className="m-0 flex snap-x snap-mandatory gap-3.5 overflow-x-auto px-4 pb-2.5 pt-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {displayTargets.map((target, i) => {
-            // console.log(setInfoTargetId);
             return target ?
               <TargetCard
                 key={`${target.app_uid}-${i}`}
