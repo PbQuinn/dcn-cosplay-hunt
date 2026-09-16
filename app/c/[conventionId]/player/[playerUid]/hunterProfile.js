@@ -648,10 +648,12 @@ export default function HunterPage({ convention, hunter, targets }) {
   const [currentTargets, setCurrentTargets] = useState(targets);
 
   async function handleCaptureSuccess(conventionId, hunterId, targetId) {
-    const { targets, score } = await performCapture(conventionId, hunterId, targetId);
-    setCapturedIds((prev) => new Set(prev).add(targetId));
-    setCurrentTargets(targets);
-    setScore(score);
+    const { targets, score, error } = await performCapture(conventionId, hunterId, targetId);
+    if (!error) {
+      setCapturedIds((prev) => new Set(prev).add(targetId));
+      setCurrentTargets(targets);
+      setScore(score);
+    }
   }
 
   const blanksCount = Math.max(0, NR_TARGETS - currentTargets.length);
