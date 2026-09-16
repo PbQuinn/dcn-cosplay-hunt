@@ -9,7 +9,6 @@ export default function CosplayHunt({ convention, hunter }) {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  //const [convention, setConventions] = useState({});
 
   const [form, setForm] = useState({
     name: "",
@@ -70,16 +69,6 @@ export default function CosplayHunt({ convention, hunter }) {
       setSaving(false);
     }
   }
-
-  // setForm({
-  //   name: "",
-  //   contact: "",
-  //   character: "",
-  //   series: "",
-  //   description: "",
-  //   invisible: true,
-  //   photo: null,
-  // });
 
   return (
     <main className="min-h-screen">
