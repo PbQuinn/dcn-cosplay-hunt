@@ -8,39 +8,35 @@ import { stringFromTargetList, targetListFromString } from "@/lib/targetList";
 
 /* Get the UID of a random fellow hunter */
 export async function getNewTarget(conventionId, hunterId) {
-    console.log("New target for ", conventionId, hunterId)
+  // TODO: Implement query that only considers records that are:
+  // * not already in the logged captures
+  // * not already in the target list of the current hunter
+  /* Select all hunters not equal to the requesting hunter */
+  const { data: candidateTargetIds, error } = await supabase
+    .from("players")
+    .select("app_uid")
+    .eq("convention_id", conventionId)
+    .eq("invisible", false)
+    .eq("approved", approvalStatuses.APPROVED)
+    .neq("app_uid", hunterId);
 
-    // TODO: Implement query that only considers records that are:
-    // * not already in the logged captures
-    // * not already in the target list of the current hunter
-    /* Select all hunters not equal to the requesting hunter */
-    const { data: candidateTargetIds, error } = await supabase
-        .from("players")
-        .select("app_uid")
-        .eq("convention_id", conventionId)
-        .eq("invisible", false)
-        .eq("approved", approvalStatuses.APPROVED)
-        .neq("app_uid", hunterId);
-
-    let candidates = candidateTargetIds? candidateTargetIds : [];
-
-    console.log("Candidates:", candidates);
-    let index = Math.floor(Math.random() * candidates.length)
-    let target = candidates[index];
-    return target ? target.app_uid : undefined
+  let candidates = candidateTargetIds ? candidateTargetIds : [];
+  let index = Math.floor(Math.random() * candidates.length)
+  let target = candidates[index];
+  return target ? target.app_uid : undefined
 }
 
 
 /* Get the hunters current target list */
 export async function getHunterTargetIds(conventionId, hunterId) {
-  return new Promise(async(resolve) => {
+  return new Promise(async (resolve) => {
     /* Select all hunters not equal to the requesting hunter */
     const { data: hunterLine, error } = await supabase
-        .from("players")
-        .select("targets")
-        .eq("convention_id", conventionId)
-        .eq("app_uid", hunterId)
-        .single()
+      .from("players")
+      .select("targets")
+      .eq("convention_id", conventionId)
+      .eq("app_uid", hunterId)
+      .single()
 
     resolve(targetListFromString(hunterLine?.targets))
   })
@@ -49,35 +45,30 @@ export async function getHunterTargetIds(conventionId, hunterId) {
 /* Request a new target */
 export async function requestNewTargetAssignment(conventionId, hunterId) {
 
-    let currentTargets = await getHunterTargetIds(conventionId, hunterId);
-    console.log("Current targets: ", currentTargets)
-    // Don't add a target if the player is already capped
-    if (currentTargets.length >= NR_TARGETS) return { newTarget: undefined, targets: currentTargets };
+  let currentTargets = await getHunterTargetIds(conventionId, hunterId);
+  // Don't add a target if the player is already capped
+  if (currentTargets.length >= NR_TARGETS) return { newTarget: undefined, targets: currentTargets };
+  const newTarget = await getNewTarget(conventionId, hunterId);
 
-    const newTarget = await getNewTarget(conventionId, hunterId);
-    console.log("Newly selected target: ", newTarget);
+  if (!newTarget) return { newTarget: undefined, targets: currentTargets }
 
-    if (!newTarget) return { newTarget: undefined, targets: currentTargets }
+  currentTargets.push(newTarget);
 
-    currentTargets.push(newTarget);
-    console.log("Updated target list", currentTargets)
-    console.log("string version: ", stringFromTargetList(currentTargets))
+  const { data, error } = await supabase
+    .from("players")
+    .update({ "targets": stringFromTargetList(currentTargets) })
+    .eq("convention_id", conventionId)
+    .eq("app_uid", hunterId)
 
-    const { data, error } = await supabase
-      .from("players")
-      .update({ "targets": stringFromTargetList(currentTargets)})
-      .eq("convention_id", conventionId)
-      .eq("app_uid", hunterId)
-
-    return { newTarget: newTarget, targets: await getTargetProfiles(conventionId, hunterId) }
+  return { newTarget: newTarget, targets: await getTargetProfiles(conventionId, hunterId) }
 }
 
 /* Returns the player-visible data for the targets of a given hunter */
 export async function getTargetProfiles(conventionId, hunterId) {
-    const targetIds = await getHunterTargetIds(conventionId, hunterId);
-    return (
-      await Promise.all(targetIds.map((id) => getTargetInformation(id, conventionId, hunterId)))
-    ).filter(Boolean);
+  const targetIds = await getHunterTargetIds(conventionId, hunterId);
+  return (
+    await Promise.all(targetIds.map((id) => getTargetInformation(id, conventionId, hunterId)))
+  ).filter(Boolean);
 }
 
 
@@ -111,15 +102,54 @@ export async function getTargetInformation(targetId, conventionId, hunterId) {
 }
 
 export async function checkPlayerCode(conventionId, targetId, code) {
-    const { data: matches, error } = await supabase
+  const { data: matches, error } = await supabase
     .from("players")
     .select("*")
     .eq("convention_id", conventionId)
     .eq("app_uid", targetId)
     .eq("code", code);
+  // If there is a match, that means the code entered was correct (conventionId/targetAppUid pairs are unique)
+  return matches?.length > 0
+}
 
-    console.log(`Matches for code ${code} with player ${targetId}`, matches);
-    // If there is a match, that means the code entered was correct (conventionId/targetAppUid pairs are unique)
-    return matches?.length > 0
+async function incrementScore(conventionId, hunterId, value) {
+  return new Promise(async (resolve) => {
+    const { data: currentScore } = await supabase
+      .from("players")
+      .select("score")
+      .eq("convention_id", conventionId)
+      .eq("app_uid", hunterId)
+      .single();
+
+    const newScore = currentScore?.score + value;
+
+    await supabase
+      .from("players")
+      .update({ "score": newScore })
+      .eq("convention_id", conventionId)
+      .eq("app_uid", hunterId);
+
+    resolve(newScore)
+  })
+
+}
+
+/* Given a target and its code, award the player with score and remove the target from the list, returning the updated target list */
+export async function performCapture(conventionId, hunterId, targetId) {
+  let currentTargets = await getHunterTargetIds(conventionId, hunterId);
+  currentTargets = currentTargets.filter((id) => id != targetId);
+
+  const { data, error } = await supabase
+    .from("players")
+    .update({ "targets": stringFromTargetList(currentTargets) })
+    .eq("convention_id", conventionId)
+    .eq("app_uid", hunterId);
+  
+    const ret = { 
+    targets: await getTargetProfiles(conventionId, hunterId), 
+    score: await incrementScore(conventionId, hunterId, 1) 
+  } 
+
+  return ret
 }
 

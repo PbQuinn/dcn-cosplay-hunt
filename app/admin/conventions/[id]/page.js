@@ -3,30 +3,29 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useAdminSession } from "@/lib/useAdminSession";
-import PlayerManager from "./PlayerManager";
-import PlayerList from "./SubmissionsList";
+import SubmissionList from "./SubmissionsList";
+import LeaderBoard from "./LeaderBoard";
+
+import { approvalStatuses } from "@/lib/constants";
 
 export default function AdminConventionPage({ params }) {
   const { session, loading } = useAdminSession();
   const conventionId = params.id;
 
   const [convention, setConvention] = useState(null);
-  const [characters, setCharacters] = useState([]);
-  const [cards, setCards] = useState([]);
+  const [leaderBoard, setLeaderBoard] = useState([]);
   const [submissions, setSubmissions] = useState([]);
   const [tab, setTab] = useState("characters");
 
   const loadAll = useCallback(async () => {
-    const [{ data: conv }, { data: chars }, { data: cardRows }, { data: subs }] = await Promise.all([
+    const [{ data: conv }, { data: leaderboard }, { data: subs }] = await Promise.all([
       supabase.from("conventions").select("*").eq("id", conventionId).single(),
-      supabase.from("characters").select("*").eq("convention_id", conventionId).order("name"),
-      supabase.from("bingo_cards").select("*").eq("convention_id", conventionId).order("created_at"),
-      supabase.from("submissions").select("*").eq("convention_id", conventionId).order("created_at", { ascending: false }),
+      supabase.from("players").select("*").eq("id", conventionId).eq("invisible", false).eq("approved", approvalStatuses.APPROVED).order("score", { ascending: false }),
+      supabase.from("players").select("*").eq("convention_id", conventionId).order("created_at", { ascending: false }),
     ]);
 
     setConvention(conv ?? null);
-    setCharacters(chars ?? []);
-    setCards(cardRows ?? []);
+    setLeaderBoard(leaderboard ?? []);
     setSubmissions(subs ?? []);
   }, [conventionId]);
 
@@ -43,8 +42,7 @@ export default function AdminConventionPage({ params }) {
   }
 
   const tabs = [
-    { id: "characters", label: `Characters (${characters.length})` },
-    { id: "cards", label: `Bingo cards (${cards.length})` },
+    { id: "leaderboard", label: `Leaderboard` },
     { id: "submissions", label: `Submissions (${submissions.length})` },
   ];
 
@@ -67,18 +65,9 @@ export default function AdminConventionPage({ params }) {
         ))}
       </div>
 
-      {tab === "characters" && (
-        <PlayerManager conventionId={conventionId} characters={characters} onChange={loadAll} />
-      )}
-      {tab === "cards" && (
-        <BingoCardManager
-          conventionId={conventionId}
-          characters={characters}
-          cards={cards}
-          onChange={loadAll}
-        />
-      )}
-      {tab === "submissions" && <PlayerList submissions={submissions} />}
+      {tab === "leaderboard" && <LeaderBoard leaderBoard={leaderBoard}/>
+      }
+      {tab === "submissions" &&  <SubmissionList submissions={submissions} />}
     </div>
   );
 }

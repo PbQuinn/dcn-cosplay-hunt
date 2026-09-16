@@ -1,13 +1,13 @@
 "use client";
 
-export default function SubmissionList({ submissions }) {
-  if (submissions.length === 0) {
+export default function LeaderBoard({ leaderBoard }) {
+  if (leaderBoard.length === 0) {
     return <p className="text-sm text-parchment/50">No cosplay entries logged yet.</p>;
   }
 
   return (
     <ul className="card-shell max-h-96 space-y-2 overflow-y-auto">
-      {submissions.map((s) => (
+      {leaderBoard.map((s) => (
         <li key={s.id} className="flex justify-between border-b border-parchment/10 pb-2 text-sm last:border-0">
           <span>
             <strong>{s.submitter_name}</strong>{" "}

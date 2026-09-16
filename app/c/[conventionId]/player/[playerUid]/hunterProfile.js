@@ -11,7 +11,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { NR_TARGETS } from "@/lib/constants";
-import { checkPlayerCode, getHunterTargetIds, getTargetInformation, requestNewTargetAssignment } from "@/app/actions/target";
+import { checkPlayerCode, getHunterTargetIds, getTargetInformation, performCapture, requestNewTargetAssignment } from "@/app/actions/target";
 import { targetListFromString } from "@/lib/targetList";
 
 function initialsFor(name) {
@@ -262,7 +262,6 @@ function BlankTarget({ conventionId, hunterId, onNewTargets }) {
   return (
     <li className="flex w-[76vw] max-w-[320px] flex-none snap-center flex-col gap-2.5 rounded-2xl border border-parchment/10 bg-ink-light p-2.5">
       <button
-        onClick={() => console.log("Hi!")}
         aria-label={`Request new`}
         className="relative block aspect-[4/5] w-full cursor-pointer overflow-hidden rounded-xl bg-ink"
       >
@@ -356,7 +355,7 @@ function TargetInfoContent({ target, onClose }) {
   );
 }
 
-function CaptureContent({ conventionId, target, onClose, onSuccess }) {
+function CaptureContent({ conventionId, hunter, target, onClose, onSuccess }) {
   const [code, setCode] = useState("");
   const [status, setStatus] = useState("idle"); // idle | checking | success | error
 
@@ -365,7 +364,7 @@ function CaptureContent({ conventionId, target, onClose, onSuccess }) {
     const correct = await checkPlayerCode(conventionId, target.app_uid, code);
     if (correct) {
       setStatus("success");
-      onSuccess(target.id);
+      onSuccess(conventionId, hunter.app_uid, target.app_uid);
       setTimeout(onClose, 900);
     } else {
       setStatus("error");
@@ -417,15 +416,25 @@ function CaptureContent({ conventionId, target, onClose, onSuccess }) {
 }
 
 function HunterProfileContent({ hunter, score, photoUrl, onClose }) {
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
+
   return (
     <div className="relative">
       <ModalCloseButton onClose={onClose} />
       <div className="mb-3.5 flex items-center gap-3.5">
-        <Avatar
-          src={photoUrl}
-          name={hunter.character}
-          className="h-16 w-16 rounded-2xl text-lg"
-        />
+        <button
+          type="button"
+          onClick={() => photoUrl && setShowPhotoModal(true)}
+          className="focus:outline-none focus:ring-2 focus:ring-parchment/50 rounded-2xl transition-transform active:scale-95"
+          title="Click to expand photo"
+        >
+          <Avatar
+            src={photoUrl}
+            name={hunter.character}
+            className="h-16 w-16 rounded-2xl text-lg cursor-pointer hover:opacity-90 transition-opacity"
+          />
+        </button>
         <div>
           <Eyebrow>{hunter.series || "Invisible"}</Eyebrow>
           <h2
@@ -445,13 +454,147 @@ function HunterProfileContent({ hunter, score, photoUrl, onClose }) {
 
       <dl className="divide-y divide-parchment/10 border-t border-parchment/10">
         <DetailRow label="Hunter" value={hunter.name} />
-        <DetailRow label="Badge code" value={hunter.code} />
+        <DetailRow label="Code" value={hunter.code} />
         <DetailRow label="Score" value={score} />
         <DetailRow label="Contact" value={hunter.contact || "—"} />
       </dl>
+
+      
+
+      <div className="mt-2 flex justify-center">
+        <a href="#">
+          <button
+            type="button"
+            className="btn-primary px-5 py-2.5 text-sm"
+            onClick={() => setShowConfirm(true)}
+          >
+            Go invisible
+          </button>
+        </a>
+      </div>
+
+      {showConfirm && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => setShowConfirm(false)}
+        >
+          {/* Pop-up Box (onClick stopPropagation prevents clicks inside from closing it) */}
+          <div
+            className="relative w-full max-w-sm rounded-2xl bg-[#1e2342] p-6 text-center shadow-xl border border-parchment/10"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Cross Button */}
+            <button
+              type="button"
+              onClick={() => setShowConfirm(false)}
+              className="absolute top-4 right-4 text-parchment/60 hover:text-parchment text-lg leading-none"
+              aria-label="Close modal"
+            >
+              ✕
+            </button>
+
+            <p className="font-body text-base text-parchment mt-2 mb-6">
+              Are you sure you want to go invisible? It is currently not possible to return to visible mode.
+            </p>
+
+            {/* Side-by-side Buttons */}
+            <div className="flex items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => setShowConfirm(false)}
+                className="px-4 py-2 text-sm rounded-xl border border-parchment/20 text-parchment/80 hover:bg-parchment/10 transition-colors"
+              >
+                No, take me back!
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowConfirm(false)}
+                className="px-4 py-2 text-sm rounded-xl bg-red-600/80 hover:bg-red-600 text-white font-medium transition-colors"
+              >
+                Yes, I understand
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+{/* Full Photo Modal */}
+      {showPhotoModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4"
+          onClick={() => setShowPhotoModal(false)}
+        >
+          <div
+            className="relative flex flex-col items-center max-w-lg w-full bg-[#1e2342] p-4 pt-10 rounded-2xl border border-parchment/10 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Close Cross Button */}
+            <button
+              type="button"
+              onClick={() => setShowPhotoModal(false)}
+              className="absolute top-3 right-4 text-parchment/60 hover:text-parchment text-xl leading-none"
+              aria-label="Close photo"
+            >
+              ✕
+            </button>
+
+            {/* Full Image Display */}
+            <div className="w-full max-h-[70vh] flex items-center justify-center overflow-hidden rounded-xl">
+              <img
+                src={photoUrl}
+                alt={hunter.character}
+                className="max-h-[70vh] w-auto max-w-full object-contain rounded-xl"
+              />
+            </div>
+
+            {/* Bottom-right action container */}
+            <div className="w-full flex justify-end mt-4">
+              <button
+                type="button"
+                onClick={() => {
+                  if (onDeletePhoto) onDeletePhoto();
+                  setShowPhotoModal(false);
+                }}
+                className="px-4 py-2 text-sm rounded-xl bg-red-600/80 hover:bg-red-600 text-white font-medium transition-colors"
+              >
+                Delete my photo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
+
+{/* <div className="rounded-lg border border-parchment/10 p-4">
+                <label
+                  htmlFor="invisible"
+                  className="flex cursor-pointer items-start gap-3"
+                >
+                  <input
+                    id="invisible"
+                    type="checkbox"
+                    checked={form.invisible}
+                    onChange={(e) =>
+                      updateForm("invisible", e.target.checked)
+                    }
+                    className="mt-1 h-4 w-4"
+                  />
+
+                  <span>
+                    <span className="block font-bold">
+                      Invisible
+                    </span>
+
+                    <span className="mt-1 block text-sm text-parchment/50">
+                      Hide my cosplay from the public hunt. If unchecked,
+                      you must provide a photo.
+                    </span>
+                  </span>
+                </label>
+              </div> */}
 
 // ---------------------------------------------------------------------------
 // Top mission bar
@@ -504,10 +647,11 @@ export default function HunterPage({ convention, hunter, targets }) {
   const [score, setScore] = useState(hunter?.score ?? 0);
   const [currentTargets, setCurrentTargets] = useState(targets);
 
-  function handleCaptureSuccess(conventionId, hunterId, targetId) {
-
+  async function handleCaptureSuccess(conventionId, hunterId, targetId) {
+    const { targets, score } = await performCapture(conventionId, hunterId, targetId);
     setCapturedIds((prev) => new Set(prev).add(targetId));
-    setScore((s) => s + 1);
+    setCurrentTargets(targets);
+    setScore(score);
   }
 
   const blanksCount = Math.max(0, NR_TARGETS - currentTargets.length);
@@ -554,7 +698,6 @@ export default function HunterPage({ convention, hunter, targets }) {
           className="m-0 flex snap-x snap-mandatory gap-3.5 overflow-x-auto px-4 pb-2.5 pt-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {displayTargets.map((target, i) => {
-            // console.log(setInfoTargetId);
             return target ?
               <TargetCard
                 key={`${target.app_uid}-${i}`}
@@ -584,6 +727,7 @@ export default function HunterPage({ convention, hunter, targets }) {
         <Modal labelledBy="capture-title" onClose={() => setCaptureTarget(null)}>
           <CaptureContent
             conventionId={convention.id}
+            hunter={hunter}
             target={captureTarget}
             onClose={() => setCaptureTarget(null)}
             onSuccess={handleCaptureSuccess}
