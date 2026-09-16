@@ -55,12 +55,12 @@ export default function CosplayHunt({ convention, hunter }) {
 
       formData.append("name", form.name);
       formData.append("contact", form.contact);
-      formData.append("character", form.character);
-      formData.append("series", form.series);
       formData.append("description", form.description);
       formData.append("invisible", String(form.invisible));
 
-      if (form.photo) {
+      if (!form.invisible) {
+        formData.append("character", form.character);
+        formData.append("series", form.series);
         formData.append("photo", form.photo);
       }
 
