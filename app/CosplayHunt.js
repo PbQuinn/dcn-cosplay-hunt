@@ -294,53 +294,7 @@ export default function CosplayHunt({ convention, hunter }) {
                     placeholder="Email, Discord, Instagram, etc."
                     value={form.contact}
                     onChange={(e) => updateForm("contact", e.target.value)}
-                    required
                   />
-                </div>
-
-                {/* Character / Series */}
-                <div className="grid gap-5 sm:grid-cols-2">
-                  <div>
-                    <label
-                      className="eyebrow mb-2 block"
-                      htmlFor="character"
-                    >
-                      Character
-                    </label>
-
-                    <input
-                      id="character"
-                      className="field-input"
-                      type="text"
-                      placeholder="Character name"
-                      value={form.character}
-                      onChange={(e) =>
-                        updateForm("character", e.target.value)
-                      }
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label
-                      className="eyebrow mb-2 block"
-                      htmlFor="series"
-                    >
-                      Series
-                    </label>
-
-                    <input
-                      id="series"
-                      className="field-input"
-                      type="text"
-                      placeholder="Anime, game, movie, etc."
-                      value={form.series}
-                      onChange={(e) =>
-                        updateForm("series", e.target.value)
-                      }
-                      required
-                    />
-                  </div>
                 </div>
 
                 {/* Description */}
@@ -392,6 +346,53 @@ export default function CosplayHunt({ convention, hunter }) {
                     </span>
                   </label>
                 </div>
+
+                {/* Character / Series */}
+                {!form.invisible && (
+                  <div className="grid gap-5 sm:grid-cols-2">
+                    <div>
+                      <label
+                        className="eyebrow mb-2 block"
+                        htmlFor="character"
+                      >
+                        Character
+                      </label>
+
+                      <input
+                        id="character"
+                        className="field-input"
+                        type="text"
+                        placeholder="Character name"
+                        value={form.character}
+                        onChange={(e) =>
+                          updateForm("character", e.target.value)
+                        }
+                        required={!form.invisible}
+                      />
+                    </div>
+
+                    <div>
+                      <label
+                        className="eyebrow mb-2 block"
+                        htmlFor="series"
+                      >
+                        Series
+                      </label>
+
+                      <input
+                        id="series"
+                        className="field-input"
+                        type="text"
+                        placeholder="Anime, game, movie, etc."
+                        value={form.series}
+                        onChange={(e) =>
+                          updateForm("series", e.target.value)
+                        }
+                        required={!form.invisible}
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {/* Photo */}
                 {!form.invisible && (
