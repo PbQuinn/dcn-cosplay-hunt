@@ -119,6 +119,29 @@ function ModalCloseButton({ onClose }) {
 }
 
 // ---------------------------------------------------------------------------
+// No character found, user caught call currently available characters
+// ---------------------------------------------------------------------------
+function NoCharFoundModal({ onClose }) {
+
+  return (
+    <div className="relative pt-1">
+      <ModalCloseButton onClose={() => onClose(false)} />
+
+
+      <h2
+        id="target-info-title"
+        className="mb-3 mt-0.5 font-display text-4xl text-parchment"
+      >
+        No characters left!
+      </h2>
+      <p>
+        It looks like you have exhausted the current target pool, well done! Come back and try to refresh in a bit to see if any new cosplayers appeared on site!
+      </p>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // 4-digit code entry
 // ---------------------------------------------------------------------------
 function CodeDigitsInput({ value, onChange, disabled, autoFocus }) {
@@ -238,17 +261,23 @@ function TargetCard({ target, captured, onOpenInfo, onOpenCapture }) {
 }
 
 
-function BlankTarget({ conventionId, hunterId, onNewTargets }) {
+function BlankTarget({ conventionId, hunterId, onNewTargets, onNoCharFound }) {
 
   const [status, setStatus] = useState("idle"); // idle | loading | error
   async function requestNewTarget() {
     setStatus("loading");
     try {
-      const { newTarget, targets } = await requestNewTargetAssignment(conventionId, hunterId);
+      const { newTarget, targets, error } = await requestNewTargetAssignment(conventionId, hunterId);
       if (newTarget) {
         onNewTargets(targets);
       } else {
-        setStatus("error");
+        if (error) {
+          setStatus("error");
+        } else {
+          setStatus("idle");
+          onNoCharFound(true);
+        }
+
       }
     } catch (e) {
       setStatus("error");
@@ -646,12 +675,15 @@ export default function HunterPage({ convention, hunter, targets }) {
   const [capturedIds, setCapturedIds] = useState(() => new Set());
   const [score, setScore] = useState(hunter?.score ?? 0);
   const [currentTargets, setCurrentTargets] = useState(targets);
+  const [showNoCharFoundModal, setShowNoCharFoundModal] = useState(false);
 
   async function handleCaptureSuccess(conventionId, hunterId, targetId) {
-    const { targets, score } = await performCapture(conventionId, hunterId, targetId);
-    setCapturedIds((prev) => new Set(prev).add(targetId));
-    setCurrentTargets(targets);
-    setScore(score);
+    const { targets, score, error } = await performCapture(conventionId, hunterId, targetId);
+    if (!error) {
+      setCapturedIds((prev) => new Set(prev).add(targetId));
+      setCurrentTargets(targets);
+      setScore(score);
+    }
   }
 
   const blanksCount = Math.max(0, NR_TARGETS - currentTargets.length);
@@ -711,6 +743,7 @@ export default function HunterPage({ convention, hunter, targets }) {
                 conventionId={convention?.id}
                 hunterId={hunter?.app_uid}
                 onNewTargets={setCurrentTargets}
+                onNoCharFound={setShowNoCharFoundModal}
               />
           })}
         </ul>
@@ -743,6 +776,19 @@ export default function HunterPage({ convention, hunter, targets }) {
             photoUrl={hunterPhotoUrl}
             onClose={() => setProfileOpen(false)}
           />
+        </Modal>
+      )}
+
+      {infoTargetId && (
+
+        <Modal labelledBy="target-info-title" onClose={() => setInfoTargetId(null)}>
+          <TargetInfoContent target={displayTargets.find((t) => t.app_uid === infoTargetId)} onClose={() => setInfoTargetId(null)} />
+        </Modal>
+      )}
+
+      {showNoCharFoundModal && (
+        <Modal labelledBy="capture-title" onClose={() => setCaptureTarget(null)}>
+          <NoCharFoundModal onClose={setShowNoCharFoundModal}/>
         </Modal>
       )}
     </div>

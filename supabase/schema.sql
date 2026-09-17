@@ -24,7 +24,7 @@ create table if not exists players (
   convention_id uuid not null references conventions(id) on delete cascade,
   name text not null,
   contact text not null,
-  app_uid text not null,
+  app_uid uuid not null unique,
   code text not null,
   character text not null,
   series text not null,
@@ -41,8 +41,8 @@ create table if not exists players (
 create table if not exists captures (
   id uuid primary key default gen_random_uuid(),
   convention_id uuid not null references conventions(id) on delete cascade,
-  hunter_id uuid not null references players(id) on delete cascade,
-  target_id uuid not null references players(id),
+  hunter_id uuid not null references players(app_uid) on delete cascade,
+  target_id uuid not null references players(app_uid),
   capture_time timestamptz not null default now(),
   score int not null
 );
@@ -136,3 +136,10 @@ create policy "hunter images are publicly readable"
 -- gets full Admin rights (see the policies above). Keep this list to
 -- people you trust — there's no separate "admin" flag, being a
 -- registered user *is* being an Admin.
+
+
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
+
+-- WARNING: This schema is for context only and is not meant to be run.
+-- Table order and constraints may not be valid for execution.
