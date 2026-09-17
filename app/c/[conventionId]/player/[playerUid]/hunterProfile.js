@@ -11,8 +11,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { NR_TARGETS, approvalStatusLabels } from "@/lib/constants";
-import { checkPlayerCode, getHunterTargetIds, getTargetInformation, performCapture, requestNewTargetAssignment } from "@/app/actions/target";
-import { targetListFromString } from "@/lib/targetList";
+import { checkPlayerCode, performCapture, requestNewTargetAssignment, updatePlayerApproval } from "@/app/actions/target";
 
 function initialsFor(name) {
   if (!name) return "??";
@@ -309,7 +308,30 @@ function BlankTarget({ conventionId, hunterId, onNewTargets }) {
 // ---------------------------------------------------------------------------
 export function TargetInfoContent({ target, onClose, isAdmin = false }) {
   const [errored, setErrored] = useState(false);
+  const [currentApprovedStatus, setCurrentApprovedStatus] = useState(target?.approved);
+  const [isUpdating, setIsUpdating] = useState(false);
   const showImage = Boolean(target?.photoUrl) && !errored;
+
+  const updateApprovalStatus = async (status) => {
+    if (!target?.id) return;
+
+    setIsUpdating(true);
+    try {
+      const data = await updatePlayerApproval(target, status);
+      
+      // Update local state so UI updates immediately
+      setCurrentApprovedStatus(status);
+
+      // Optional: Inform parent component of the updated record
+      if (onUpdateTarget && data?.[0]) {
+        onUpdateTarget(data[0]);
+      }
+    } catch (err) {
+      console.error("Failed to update status:", err);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   if (!target) return null;
 
@@ -365,14 +387,17 @@ export function TargetInfoContent({ target, onClose, isAdmin = false }) {
               label="Visibility"
               value={target.invisible ? "Invisible" : "Visible"}
             />
-            <DetailRow label="Approval" value={approvalStatusLabels[target.approved] || "-"} />
+            <DetailRow 
+              label="Approval" 
+              value={approvalStatusLabels[currentApprovedStatus] || "-"} 
+            />
           </dl>
 
           {/* Approval Buttons */}
           <div className="flex items-center justify-center gap-3 pt-2">
             <button
               type="button"
-              onClick={() => setShowConfirm(false)}
+              onClick={() => updateApprovalStatus(2)}
               className="flex-1 cursor-pointer rounded-xl border border-flare/30 bg-flare/10 px-4 py-2.5 font-body text-sm font-semibold text-flare transition-all hover:bg-flare hover:text-ink active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-flare/50"
             >
               Reject
@@ -380,7 +405,7 @@ export function TargetInfoContent({ target, onClose, isAdmin = false }) {
 
             <button
               type="button"
-              onClick={() => setShowConfirm(false)}
+              onClick={() => updateApprovalStatus(1)}
               className="flex-1 cursor-pointer rounded-xl bg-sage px-4 py-2.5 font-body text-sm font-bold text-ink transition-all hover:bg-sage/90 hover:shadow-lg hover:shadow-sage/10 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage/50"
             >
               Approve

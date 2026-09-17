@@ -4,7 +4,18 @@ import { approvalStatuses, NR_TARGETS } from "@/lib/constants";
 import { supabase } from "@/lib/supabaseServer";
 import { stringFromTargetList, targetListFromString } from "@/lib/targetList";
 
+export async function updatePlayerApproval(target, status) {
+console.log(`Updating approval status for targetId: ${target.id} to status: ${status}`);
 
+  const { data, error } = await supabase
+    .from("players")
+    .update({ approved: status })
+    .eq("id", target.id)
+    .select();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
 
 /* Get the UID of a random fellow hunter */
 export async function getNewTarget(conventionId, hunterId) {
