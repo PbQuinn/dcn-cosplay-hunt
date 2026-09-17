@@ -33,12 +33,10 @@ export function SubmissionList({ submissions }) {
           >
             <span>
               <strong>{s.name}</strong>{" "}
-              {!s.invisible && (
-                <>
-                  <span className="text-parchment/60">as {s.character}</span>{" "}
-                </>
-              )}
-              <span className="text-parchment/60">with a score of {s.score}</span>
+              <span className="text-parchment/60">
+                {!s.invisible ? ` as ${s.character}` : " (Invisible)"}
+              </span>{" "}
+              <span className="text-parchment/60">[score: {s.score}]</span>
             </span>
             <span className="font-mono text-[10px] text-parchment/30">
               Created at {formatDate(s.created_at)}
@@ -83,12 +81,10 @@ export function ApprovalList({ submissions }) {
             className="flex cursor-pointer justify-between border-b border-parchment/10 pb-2 text-sm transition-colors hover:bg-parchment/5 last:border-0"
           >
             <span>
-              <strong>{s.submitter_name}</strong>{" "}
-              {!s.invisible && (
-                <>
-                  <span className="text-parchment/60">as {s.character}</span>{" "}
-                </>
-              )}
+              <strong>{s.name}</strong>{" "}
+              <span className="text-parchment/60">
+                {!s.invisible ? ` as ${s.character}` : " (Invisible)"}
+              </span>{" "}
             </span>
             <span className="font-mono text-[10px] text-parchment/30">
               Created at {formatDate(s.created_at)}
