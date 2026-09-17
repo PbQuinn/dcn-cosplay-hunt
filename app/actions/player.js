@@ -55,7 +55,7 @@ export async function createPlayer(conventionId, formData) {
 
     let targetList = [];
     for (let i = 0; i < NR_TARGETS; i++) {
-        let newTarget = await getNewTarget(conventionId, appUid);
+        let newTarget = await getNewTarget(conventionId, appUid, []);
         if (newTarget) {
             targetList.push(newTarget);
         }
