@@ -2,7 +2,7 @@
 
 export default function LeaderBoard({ leaderBoard = [], displayAmount }) {
   // Determine total rows to show: either displayAmount or the actual data length
-  const totalRows = displayAmount ? Math.max(leaderBoard.length, displayAmount) : leaderBoard.length;
+  const totalRows = displayAmount ? displayAmount : leaderBoard.length;
 
   if (totalRows === 0) {
     return <p className="text-sm text-parchment/50">No cosplay entries logged yet.</p>;
