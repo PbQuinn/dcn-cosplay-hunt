@@ -15,13 +15,14 @@ export async function getNewTarget(conventionId, hunterId, currentTargets) {
 
   if (captures.error) {
     console.error(captures.error)
-    return undefined
+    // Empty target but nonempty error indicates something went wrong on the backend side
+    return { newTarget: undefined, error: captures.error }
   }
 
   const forbiddenTargets = currentTargets.concat(captures.targets)
   
   /* Select all hunters not equal to the requesting hunter */
-  const { data: candidateTargetIds, error } = await supabase
+  const { data: candidateTargetIds, findError } = await supabase
     .from("players")
     .select("app_uid")
     .eq("convention_id", conventionId)
@@ -30,10 +31,16 @@ export async function getNewTarget(conventionId, hunterId, currentTargets) {
     .notIn("app_uid", forbiddenTargets)
     .neq("app_uid", hunterId);
 
+  if (findError) {
+    // Empty target but nonempty error indicates something went wrong on the backend side
+    return { newTarget: undefined, error: findError }
+  }
+
   let candidates = candidateTargetIds ? candidateTargetIds : [];
   let index = Math.floor(Math.random() * candidates.length)
   let target = candidates[index];
-  return target ? target.app_uid : undefined
+  // If there is a target, return it. Otherwise return empty with no error, indicating "No targets left"
+  return target ? { newTarget: target.app_uid, error: undefined } : { newTarget: undefined, error: undefined }
 }
 
 
@@ -58,19 +65,19 @@ export async function requestNewTargetAssignment(conventionId, hunterId) {
   let currentTargets = await getHunterTargetIds(conventionId, hunterId);
   // Don't add a target if the player is already capped
   if (currentTargets.length >= NR_TARGETS) return { newTarget: undefined, targets: currentTargets };
-  const newTarget = await getNewTarget(conventionId, hunterId, currentTargets);
+  const { newTarget, error } = await getNewTarget(conventionId, hunterId, currentTargets);
 
-  if (!newTarget) return { newTarget: undefined, targets: currentTargets }
+  if (!newTarget) return { newTarget: undefined, targets: currentTargets, error: error }
 
   currentTargets.push(newTarget);
 
-  const { data, error } = await supabase
+  const { data, updateError } = await supabase
     .from("players")
     .update({ "targets": stringFromTargetList(currentTargets) })
     .eq("convention_id", conventionId)
     .eq("app_uid", hunterId)
 
-  return { newTarget: newTarget, targets: await getTargetProfiles(conventionId, hunterId) }
+  return { newTarget: newTarget, targets: await getTargetProfiles(conventionId, hunterId), error: updateError }
 }
 
 /* Returns the player-visible data for the targets of a given hunter */
@@ -184,8 +191,6 @@ export async function performCapture(conventionId, hunterId, targetId) {
 
     ret.targets = await getTargetProfiles(conventionId, hunterId);
     ret.score = await incrementScore(conventionId, hunterId, CAPTURE_REWARD);
-
-    console.log(ret)
 
   return ret
 }
