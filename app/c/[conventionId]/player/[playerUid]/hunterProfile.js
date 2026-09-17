@@ -367,6 +367,25 @@ export function TargetInfoContent({ target, onClose, isAdmin = false }) {
             />
             <DetailRow label="Approval" value={approvalStatusLabels[target.approved] || "-"} />
           </dl>
+
+          {/* Approval Buttons */}
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <button
+              type="button"
+              onClick={() => setShowConfirm(false)}
+              className="flex-1 cursor-pointer rounded-xl border border-flare/30 bg-flare/10 px-4 py-2.5 font-body text-sm font-semibold text-flare transition-all hover:bg-flare hover:text-ink active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-flare/50"
+            >
+              Reject
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setShowConfirm(false)}
+              className="flex-1 cursor-pointer rounded-xl bg-sage px-4 py-2.5 font-body text-sm font-bold text-ink transition-all hover:bg-sage/90 hover:shadow-lg hover:shadow-sage/10 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage/50"
+            >
+              Approve
+            </button>
+          </div>
         </div>
       ) : (
         /* ---------------------------------------------------- */
