@@ -10,7 +10,7 @@ import {
   CircleAlert,
   ChevronRight,
 } from "lucide-react";
-import { NR_TARGETS } from "@/lib/constants";
+import { NR_TARGETS, approvalStatusLabels } from "@/lib/constants";
 import { checkPlayerCode, getHunterTargetIds, getTargetInformation, performCapture, requestNewTargetAssignment } from "@/app/actions/target";
 import { targetListFromString } from "@/lib/targetList";
 
@@ -307,9 +307,11 @@ function BlankTarget({ conventionId, hunterId, onNewTargets }) {
 // ---------------------------------------------------------------------------
 // Modal contents
 // ---------------------------------------------------------------------------
-export function TargetInfoContent({ target, onClose }) {
+export function TargetInfoContent({ target, onClose, isAdmin = false }) {
   const [errored, setErrored] = useState(false);
-  const showImage = Boolean(target.photoUrl) && !errored;
+  const showImage = Boolean(target?.photoUrl) && !errored;
+
+  if (!target) return null;
 
   return (
     <div className="relative pt-1">
@@ -319,18 +321,18 @@ export function TargetInfoContent({ target, onClose }) {
         {showImage ? (
           <img
             src={target.photoUrl}
-            alt={target.character}
+            alt={target.character || "Target"}
             onError={() => setErrored(true)}
             className="h-full w-full object-cover object-center"
             style={{
-              display: 'flex',
-              width: 'auto',
-              height: '120%',
+              display: "flex",
+              width: "auto",
+              height: "120%",
             }}
           />
         ) : (
           <span className="font-mono text-4xl text-parchment/40">
-            {initialsFor(target.character)}
+            {initialsFor(target.character || target.name)}
           </span>
         )}
       </div>
@@ -338,19 +340,43 @@ export function TargetInfoContent({ target, onClose }) {
       <Eyebrow>{target.series || "Unknown series"}</Eyebrow>
       <h2
         id="target-info-title"
-        className="mb-3 mt-0.5 font-display text-4xl text-parchment"
+        className="mb-1 mt-0.5 font-display text-4xl text-parchment"
       >
-        {target.character}
+        {target.character || "Unidentified Cosplayer"}
       </h2>
+
       {target.description && (
         <p className="mb-4 font-body text-[15px] italic leading-relaxed text-parchment/90">
           "{target.description}"
         </p>
       )}
 
-      <p>
-        See if you can spot {target.character}! Once you find them, ask for their 4-digit code to score points!
-      </p>
+      {/* ---------------------------------------------------- */}
+      {/* SHIELDED ADMIN DATA                                  */}
+      {/* ---------------------------------------------------- */}
+      {isAdmin ? (
+        <div className="mt-4 border-t border-parchment/10 pt-2">
+          <Eyebrow className="mb-1 text-flare">Admin Details</Eyebrow>
+          <dl className="divide-y divide-parchment/10">
+            <DetailRow label="Player Name" value={target.name || "—"} />
+            <DetailRow label="Code" value={target.code || "—"} />
+            <DetailRow label="Contact" value={target.contact || "—"} />
+            <DetailRow
+              label="Visibility"
+              value={target.invisible ? "Invisible" : "Visible"}
+            />
+            <DetailRow label="Approval" value={approvalStatusLabels[target.approved] || "-"} />
+          </dl>
+        </div>
+      ) : (
+        /* ---------------------------------------------------- */
+        /* PUBLIC INSTRUCTIONS                                 */
+        /* ---------------------------------------------------- */
+        <p className="mt-3 font-body text-sm leading-relaxed text-parchment/80">
+          See if you can spot {target.character || "this cosplayer"}! Once you
+          find them, ask for their 4-digit code to score points!
+        </p>
+      )}
     </div>
   );
 }
@@ -459,7 +485,7 @@ function HunterProfileContent({ hunter, score, photoUrl, onClose }) {
         <DetailRow label="Contact" value={hunter.contact || "—"} />
       </dl>
 
-      
+
 
       <div className="mt-2 flex justify-center">
         <a href="#">
@@ -518,7 +544,7 @@ function HunterProfileContent({ hunter, score, photoUrl, onClose }) {
         </div>
       )}
 
-{/* Full Photo Modal */}
+      {/* Full Photo Modal */}
       {showPhotoModal && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4"

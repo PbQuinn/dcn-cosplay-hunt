@@ -71,6 +71,22 @@ export async function getTargetProfiles(conventionId, hunterId) {
   ).filter(Boolean);
 }
 
+// Internal base fetcher (not exported as a server action)
+async function fetchPlayerRecord(conventionId, playerId, selectFields = "*") {
+  const { data, error } = await supabase
+    .from("players")
+    .select(selectFields)
+    .eq("convention_id", conventionId)
+    .eq("app_uid", playerId)
+    .single();
+
+  if (error || !data) return null;
+
+  return {
+    ...data,
+    photoUrl: `/c/${conventionId}/player/${data.app_uid}/photo`,
+  };
+}
 
 // Returns only what a hunter is allowed to know about one of their targets —
 // never the full player row (no code, no contact, no invisible/approved
@@ -78,27 +94,28 @@ export async function getTargetProfiles(conventionId, hunterId) {
 // /c/[conventionId]/player/[playerUid]/photo, which resolves the actual
 // signed URL server-side, on demand, the first (and only) time it's
 // requested — we never call createSignedUrl ourselves here.
+// ----------------------------------------------------
+// PLAYER ACCESS (Public / Shielded)
+// ----------------------------------------------------
 export async function getTargetInformation(targetId, conventionId, hunterId) {
   // TODO: validate that (hunterId, targetId) is an active hunter/target pair
   // for this convention before returning anything — right now any target ID
   // is resolved unconditionally.
-  const { data: targetData, error } = await supabase
-    .from("players")
-    .select("app_uid, character, series, description, name")
-    .eq("convention_id", conventionId)
-    .eq("app_uid", targetId)
-    .single();
+  return fetchPlayerRecord(
+    conventionId,
+    targetId,
+    "app_uid, character, series, description, name"
+  );
+}
 
-  if (error || !targetData) return null;
+// ----------------------------------------------------
+// ADMIN ACCESS (Full Data)
+// ----------------------------------------------------
+export async function getAdminPlayerProfile(conventionId, playerId) {
+  // MUST verify admin session / permissions here before returning sensitive data
+  // e.g., await assertAdmin(conventionId);
 
-  return {
-    app_uid: targetData.app_uid,
-    character: targetData.character,
-    series: targetData.series,
-    description: targetData.description,
-    name: targetData.name,
-    photoUrl: `/c/${conventionId}/player/${targetData.app_uid}/photo`,
-  };
+  return fetchPlayerRecord(conventionId, playerId, "*");
 }
 
 export async function checkPlayerCode(conventionId, targetId, code) {
