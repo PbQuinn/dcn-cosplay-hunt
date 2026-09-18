@@ -410,7 +410,7 @@ export function TargetInfoContent({ target, onClose, isAdmin = false }) {
           <Eyebrow className="mb-1 text-flare">Admin Details</Eyebrow>
           <dl className="divide-y divide-parchment/10">
             <DetailRow label="Player Name" value={target.name || "—"} />
-            <DetailRow label="Code" value={target.code || "—"} />
+            <DetailRow label="Code" value={target?.code ? String(target.code).padStart(4, "0") : "----"} />
             <DetailRow label="Contact" value={target.contact || "—"} />
             <DetailRow
               label="Visibility"
@@ -553,7 +553,7 @@ function HunterProfileContent({ hunter, score, photoUrl, onClose }) {
 
       <dl className="divide-y divide-parchment/10 border-t border-parchment/10">
         <DetailRow label="Hunter" value={hunter.name} />
-        <DetailRow label="Code" value={hunter.code} />
+        <DetailRow label="Code" value={hunter?.code ? String(hunter.code).padStart(4, "0") : "----"} />
         <DetailRow label="Score" value={score} />
         <DetailRow label="Contact" value={hunter.contact || "—"} />
       </dl>
@@ -712,7 +712,7 @@ function MissionBar({ hunter, score, photoUrl, onOpenProfile }) {
           className="h-9 w-9 rounded-full text-[11px]"
         />
         <span className="rounded-lg border border-parchment/10 bg-ink-light px-2.5 py-1 font-mono text-[15px] tracking-wide text-parchment">
-          Your code: {hunter?.code || "----"}
+          Your code: {hunter?.code ? String(hunter.code).padStart(4, "0") : "----"}
         </span>
       </button>
 
