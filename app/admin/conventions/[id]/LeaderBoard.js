@@ -26,7 +26,9 @@ export default function LeaderBoard({ leaderBoard = [], displayAmount }) {
               {entry ? (
                 <>
                   <strong>{entry.name}</strong>{" "}
-                  <span className="text-parchment/60">as {entry.character}</span>
+                  {!entry.invisible && (
+                    <span className="text-parchment/60">as {entry.character}</span>
+                  )}
                 </>
               ) : null}
             </span>
