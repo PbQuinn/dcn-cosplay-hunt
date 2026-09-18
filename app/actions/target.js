@@ -75,9 +75,11 @@ export async function requestNewTargetAssignment(conventionId, hunterId) {
 
   let currentTargets = await getHunterTargetIds(conventionId, hunterId);
   // Don't add a target if the player is already capped
+  console.log("Pulling")
+
   if (currentTargets.length >= NR_TARGETS) return { newTarget: undefined, targets: currentTargets };
   const { newTarget, error } = await getNewTarget(conventionId, hunterId, currentTargets);
-
+  console.log("the targets", newTarget);
   if (!newTarget) return { newTarget: undefined, targets: currentTargets, error: error }
 
   currentTargets.push(newTarget);

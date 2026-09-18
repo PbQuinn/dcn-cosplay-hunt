@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { randomUUID } from "crypto";
 import { supabase } from "@/lib/supabaseServer";
 import { NR_TARGETS } from "@/lib/constants";
-import { getNewTarget } from "./target";
+import { getNewTarget, requestNewTargetAssignment } from "./target";
 import { stringFromTargetList } from "@/lib/targetList";
 
 export async function createPlayer(conventionId, formData) {
@@ -53,30 +53,21 @@ export async function createPlayer(conventionId, formData) {
         }
     }
 
-    let targetList = [];
-    for (let i = 0; i < NR_TARGETS; i++) {
-        let {newTarget} = await getNewTarget(conventionId, appUid, []);
-        if (newTarget) {
-            targetList.push(newTarget);
-        }
-    }
-
     const newRow = {
         // Database fields
         convention_id: conventionId,
         app_uid: appUid,
         code: Math.ceil(Math.random() * 9999),
-        targets: stringFromTargetList(targetList),
+        targets: "",
         created_at: new Date().toISOString(),
         // User provided fields
-        name: name?.toString().trim() || "",
-        contact: contact?.toString().trim() || "",
-        character: character?.toString().trim() || "",
-        series: series?.toString().trim() || "",
+        name: name.toString().trim(),
+        contact: contact.toString().trim(),
+        character: character.toString().trim(),
+        series: series.toString().trim(),
         description: description?.toString().trim() || "",
         invisible,
         image_url: photoPath,
-
     }
 
     const { error } = await supabase.from("players").insert(newRow);
@@ -90,6 +81,16 @@ export async function createPlayer(conventionId, formData) {
         console.error(error);
         throw new Error("Could not create your player.");
     } else {
+
+        // Populate character with targets
+        let targetList = [];
+        for (let i = 0; i < NR_TARGETS; i++) {
+            let newTarget = await requestNewTargetAssignment(conventionId, appUid);
+            if (newTarget) {
+                targetList.push(newTarget);
+            }
+        }
+
         // Set a persistent cookie.
         const cookieStore = await cookies();
 
