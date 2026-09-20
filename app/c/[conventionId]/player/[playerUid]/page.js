@@ -42,7 +42,6 @@ export default async function Page({ params }) {
     .eq("id", conventionId)
     .single();
 
-  console.log(convention.id, conventionId)
   // The convention in URL is not a valid convention
   if (convention.id !== conventionId) {
     notFound();

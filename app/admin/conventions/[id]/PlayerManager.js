@@ -10,86 +10,13 @@ export default function PlayerManager({ conventionId, characters, onChange }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  async function handleAdd(e) {
-    e.preventDefault();
-    if (!name.trim()) return;
-    setSaving(true);
-    setError("");
-
-    let image_url = null;
-
-    if (file) {
-      const path = `${conventionId}/${crypto.randomUUID()}-${file.name}`;
-      const { error: uploadError } = await supabase.storage
-        .from("character-images")
-        .upload(path, file);
-
-      if (uploadError) {
-        setError(uploadError.message);
-        setSaving(false);
-        return;
-      }
-
-      const { data } = supabase.storage.from("character-images").getPublicUrl(path);
-      image_url = data.publicUrl;
-    }
-
-    const { error: insertError } = await supabase.from("characters").insert({
-      convention_id: conventionId,
-      name: name.trim(),
-      image_url,
-    });
-
-    if (insertError) {
-      setError(insertError.message);
-      setSaving(false);
-      return;
-    }
-
-    setName("");
-    setFile(null);
-    setSaving(false);
-    onChange();
-  }
-
-  async function handleDelete(id) {
-    if (!confirm("Remove this character? It will also come off any bingo cards using it.")) return;
-    await supabase.from("characters").delete().eq("id", id);
-    onChange();
-  }
-
   return (
     <div className="space-y-4">
-      <form onSubmit={handleAdd} className="card-shell space-y-4">
         <div>
-          <label className="eyebrow mb-2 block" htmlFor="char-name">Character name</label>
-          <input
-            id="char-name"
-            className="field-input"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Nausicaä"
-            required
-          />
+          Character
         </div>
-        <div>
-          <label className="eyebrow mb-2 block" htmlFor="char-image">Reference image (optional)</label>
-          <input
-            id="char-image"
-            type="file"
-            accept="image/*"
-            className="field-input file:mr-3 file:rounded-sm file:border-0 file:bg-flare file:px-3 file:py-1.5 file:font-mono file:text-xs file:uppercase file:text-ink"
-            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-          />
-        </div>
-        {error && <p className="text-sm text-flare">{error}</p>}
-        <button className="btn-primary" type="submit" disabled={saving}>
-          {saving ? "Adding…" : "Add character"}
-        </button>
-      </form>
-
       {characters.length === 0 ? (
-        <p className="text-sm text-parchment/50">No characters added yet.</p>
+        <p className="text-sm text-parchment/50">No players yet.</p>
       ) : (
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {characters.map((c) => (
