@@ -13,7 +13,7 @@ import {
 import { NR_TARGETS, approvalStatusLabels } from "@/lib/constants";
 import {
   checkPlayerCode, performCapture, requestNewTargetAssignment, updatePlayerApproval,
-  updatePlayerVisibility
+  updatePlayerVisibility, removePlayerPhoto
 } from "@/app/actions/target";
 
 function initialsFor(name) {
@@ -515,6 +515,7 @@ function CaptureContent({ conventionId, hunter, target, onClose, onSuccess }) {
 
 function HunterProfileContent({ hunter, score, photoUrl, onClose }) {
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [currentVisibilityStatus, setCurrentVisibilityStatus] = useState(hunter?.invisible);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -531,12 +532,17 @@ function HunterProfileContent({ hunter, score, photoUrl, onClose }) {
 
       // Close the confirmation modal on success
       setShowConfirm(false);
-
     } catch (err) {
       console.error("Failed to update status:", err);
     } finally {
       setIsUpdating(false);
     }
+  };
+
+  const handleDeletePhoto = async () => {
+    await removePlayerPhoto(hunter);
+    setShowDeleteConfirm(false);
+    setShowPhotoModal(false);
   };
 
   return (
@@ -579,7 +585,6 @@ function HunterProfileContent({ hunter, score, photoUrl, onClose }) {
         <DetailRow label="Contact" value={hunter.contact || "—"} />
       </dl>
 
-
       {!hunter.invisible && (
         <div className="mt-2 flex justify-center">
           <a href="#">
@@ -594,17 +599,16 @@ function HunterProfileContent({ hunter, score, photoUrl, onClose }) {
         </div>
       )}
 
+      {/* Visibility Confirmation Modal */}
       {showConfirm && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
           onClick={() => setShowConfirm(false)}
         >
-          {/* Pop-up Box (onClick stopPropagation prevents clicks inside from closing it) */}
           <div
             className="relative w-full max-w-sm rounded-2xl bg-[#1e2342] p-6 text-center shadow-xl border border-parchment/10"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Close Cross Button */}
             <button
               type="button"
               onClick={() => setShowConfirm(false)}
@@ -618,7 +622,6 @@ function HunterProfileContent({ hunter, score, photoUrl, onClose }) {
               Are you sure you want to go invisible? It is currently not possible to return to visible mode.
             </p>
 
-            {/* Side-by-side Buttons */}
             <div className="flex items-center justify-center gap-3">
               <button
                 type="button"
@@ -639,6 +642,49 @@ function HunterProfileContent({ hunter, score, photoUrl, onClose }) {
         </div>
       )}
 
+      {/* Delete Photo Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => setShowDeleteConfirm(false)}
+        >
+          <div
+            className="relative w-full max-w-sm rounded-2xl bg-[#1e2342] p-6 text-center shadow-xl border border-parchment/10"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setShowDeleteConfirm(false)}
+              className="absolute top-4 right-4 text-parchment/60 hover:text-parchment text-lg leading-none"
+              aria-label="Close modal"
+            >
+              ✕
+            </button>
+
+            <p className="font-body text-base text-parchment mt-2 mb-6">
+              Are you sure you want to delete your photo? This action cannot be undone.
+            </p>
+
+            <div className="flex items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-4 py-2 text-sm rounded-xl border border-parchment/20 text-parchment/80 hover:bg-parchment/10 transition-colors"
+              >
+                No, keep photo
+              </button>
+              <button
+                type="button"
+                onClick={handleDeletePhoto}
+                className="px-4 py-2 text-sm rounded-xl bg-red-600/80 hover:bg-red-600 text-white font-medium transition-colors"
+              >
+                Yes, delete it
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Full Photo Modal */}
       {showPhotoModal && (
         <div
@@ -649,7 +695,6 @@ function HunterProfileContent({ hunter, score, photoUrl, onClose }) {
             className="relative flex flex-col items-center max-w-lg w-full bg-[#1e2342] p-4 pt-10 rounded-2xl border border-parchment/10 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Close Cross Button */}
             <button
               type="button"
               onClick={() => setShowPhotoModal(false)}
@@ -659,7 +704,6 @@ function HunterProfileContent({ hunter, score, photoUrl, onClose }) {
               ✕
             </button>
 
-            {/* Full Image Display */}
             <div className="w-full max-h-[70vh] flex items-center justify-center overflow-hidden rounded-xl">
               <img
                 src={photoUrl}
@@ -668,14 +712,10 @@ function HunterProfileContent({ hunter, score, photoUrl, onClose }) {
               />
             </div>
 
-            {/* Bottom-right action container */}
             <div className="w-full flex justify-end mt-4">
               <button
                 type="button"
-                onClick={() => {
-                  if (onDeletePhoto) onDeletePhoto();
-                  setShowPhotoModal(false);
-                }}
+                onClick={() => setShowDeleteConfirm(true)}
                 className="px-4 py-2 text-sm rounded-xl bg-red-600/80 hover:bg-red-600 text-white font-medium transition-colors"
               >
                 Delete my photo
@@ -684,7 +724,6 @@ function HunterProfileContent({ hunter, score, photoUrl, onClose }) {
           </div>
         </div>
       )}
-
     </div>
   );
 }
