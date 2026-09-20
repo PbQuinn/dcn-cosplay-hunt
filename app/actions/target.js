@@ -17,6 +17,19 @@ console.log(`Updating approval status for targetId: ${target.id} to status: ${st
   return data;
 }
 
+export async function updatePlayerVisibility(target, status) {
+console.log(`Updating visibility status for targetId: ${target.id} to status: ${status}`);
+
+  const { data, error } = await supabase
+    .from("players")
+    .update({ invisible: status })
+    .eq("id", target.id)
+    .select();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 /* Get the UID of a random fellow hunter */
 export async function getNewTarget(conventionId, hunterId, currentTargets) {
   // TODO: Implement query that only considers records that are:

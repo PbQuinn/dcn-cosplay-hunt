@@ -11,7 +11,10 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { NR_TARGETS, approvalStatusLabels } from "@/lib/constants";
-import { checkPlayerCode, performCapture, requestNewTargetAssignment, updatePlayerApproval } from "@/app/actions/target";
+import {
+  checkPlayerCode, performCapture, requestNewTargetAssignment, updatePlayerApproval,
+  updatePlayerVisibility
+} from "@/app/actions/target";
 
 function initialsFor(name) {
   if (!name) return "??";
@@ -347,14 +350,10 @@ export function TargetInfoContent({ target, onClose, isAdmin = false }) {
     setIsUpdating(true);
     try {
       const data = await updatePlayerApproval(target, status);
-      
+
       // Update local state so UI updates immediately
       setCurrentApprovedStatus(status);
 
-      // Optional: Inform parent component of the updated record
-      if (onUpdateTarget && data?.[0]) {
-        onUpdateTarget(data[0]);
-      }
     } catch (err) {
       console.error("Failed to update status:", err);
     } finally {
@@ -416,9 +415,9 @@ export function TargetInfoContent({ target, onClose, isAdmin = false }) {
               label="Visibility"
               value={target.invisible ? "Invisible" : "Visible"}
             />
-            <DetailRow 
-              label="Approval" 
-              value={approvalStatusLabels[currentApprovedStatus] || "-"} 
+            <DetailRow
+              label="Approval"
+              value={approvalStatusLabels[currentApprovedStatus] || "-"}
             />
           </dl>
 
@@ -517,6 +516,28 @@ function CaptureContent({ conventionId, hunter, target, onClose, onSuccess }) {
 function HunterProfileContent({ hunter, score, photoUrl, onClose }) {
   const [showConfirm, setShowConfirm] = useState(false);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [currentVisibilityStatus, setCurrentVisibilityStatus] = useState(hunter?.invisible);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const updateVisibilityStatus = async (status) => {
+    if (!hunter?.id) return;
+
+    setIsUpdating(true);
+    try {
+      const data = await updatePlayerVisibility(hunter, status);
+
+      // Update local state so UI updates immediately
+      setCurrentVisibilityStatus(status);
+
+      // Close the confirmation modal on success
+      setShowConfirm(false);
+
+    } catch (err) {
+      console.error("Failed to update status:", err);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   return (
     <div className="relative">
@@ -607,7 +628,7 @@ function HunterProfileContent({ hunter, score, photoUrl, onClose }) {
               </button>
               <button
                 type="button"
-                onClick={() => setShowConfirm(false)}
+                onClick={() => updateVisibilityStatus(true)}
                 className="px-4 py-2 text-sm rounded-xl bg-red-600/80 hover:bg-red-600 text-white font-medium transition-colors"
               >
                 Yes, I understand
@@ -858,7 +879,7 @@ export default function HunterPage({ convention, hunter, targets }) {
 
       {showNoCharFoundModal && (
         <Modal labelledBy="capture-title" onClose={() => setCaptureTarget(null)}>
-          <NoCharFoundModal onClose={setShowNoCharFoundModal}/>
+          <NoCharFoundModal onClose={setShowNoCharFoundModal} />
         </Modal>
       )}
     </div>
