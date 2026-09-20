@@ -580,18 +580,19 @@ function HunterProfileContent({ hunter, score, photoUrl, onClose }) {
       </dl>
 
 
-
-      <div className="mt-2 flex justify-center">
-        <a href="#">
-          <button
-            type="button"
-            className="btn-primary px-5 py-2.5 text-sm"
-            onClick={() => setShowConfirm(true)}
-          >
-            Go invisible
-          </button>
-        </a>
-      </div>
+      {!hunter.invisible && (
+        <div className="mt-2 flex justify-center">
+          <a href="#">
+            <button
+              type="button"
+              className="btn-primary px-5 py-2.5 text-sm"
+              onClick={() => setShowConfirm(true)}
+            >
+              Go invisible
+            </button>
+          </a>
+        </div>
+      )}
 
       {showConfirm && (
         <div
