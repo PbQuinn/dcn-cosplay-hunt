@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { randomUUID } from "crypto";
 import { supabase } from "@/lib/supabaseServer";
 import { NR_TARGETS } from "@/lib/constants";
-import { getNewTarget } from "./target";
+import { getNewTarget, requestNewTargetAssignment } from "./target";
 import { stringFromTargetList } from "@/lib/targetList";
 
 export async function createPlayer(conventionId, formData) {
@@ -17,12 +17,30 @@ export async function createPlayer(conventionId, formData) {
     const series = formData.get("series");
     const photo = formData.get("photo");
 
-    // Validate
+    // Name is required
     if (!name) {
         throw new Error("Please fill in all required fields.");
     }
-    if (!invisible && (!(photo instanceof File) && !(character instanceof File) && !(series instanceof File))) {
+    // Validate all fields for "null"
+    if (!!name && name === null) {
+        throw new Error("The entered name cannot be processed, please change it");
+    }
+    if (!!contact && contact === null) {
+        throw new Error("The entered contact cannot be processed, please change it, or leave it blank");
+    }
+    if (!!description && description === null) {
+        throw new Error("The entered description be processed, please change it, or leave it blank");
+    }
+    // If visible, all other fields are also required
+    if (!invisible && (!(photo instanceof File) || !(character) && !(series))) {
         throw new Error("Please fill in all required fields.");
+    }
+    // If visible, also validate all fields for "null"
+    if (!invisible && character === null) {
+        throw new Error("The entered character name cannot be processed, please change it");
+    }
+    if (!invisible && series === null) {
+        throw new Error("The entered series name cannot be processed, please change it");
     }
 
     // Generate the player's permanent identifier on the server.
@@ -53,20 +71,12 @@ export async function createPlayer(conventionId, formData) {
         }
     }
 
-    let targetList = [];
-    for (let i = 0; i < NR_TARGETS; i++) {
-        let newTarget = await getNewTarget(conventionId, appUid, []);
-        if (newTarget) {
-            targetList.push(newTarget);
-        }
-    }
-
     const newRow = {
         // Database fields
         convention_id: conventionId,
         app_uid: appUid,
         code: Math.ceil(Math.random() * 9999),
-        targets: stringFromTargetList(targetList),
+        targets: "", // Character is populated with targets only upon succesful creation
         created_at: new Date().toISOString(),
         // User provided fields
         name: name?.toString().trim() || "",
@@ -76,7 +86,6 @@ export async function createPlayer(conventionId, formData) {
         description: description?.toString().trim() || "",
         invisible,
         image_url: photoPath,
-
     }
 
     const { error } = await supabase.from("players").insert(newRow);
@@ -103,6 +112,15 @@ export async function createPlayer(conventionId, formData) {
 
             path: "/",
         });
+
+        
+        let targetList = [];
+        for (let i = 0; i < NR_TARGETS; i++) {
+            let newTarget = await requestNewTargetAssignment(conventionId, appUid, targetList);
+            if (newTarget) {
+                targetList.push(newTarget);
+            }
+        }
 
         // Send the player directly to their page.
         redirect(`/c/${conventionId}/player/${appUid}`);
