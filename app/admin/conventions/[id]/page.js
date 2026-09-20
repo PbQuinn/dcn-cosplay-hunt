@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useAdminSession } from "@/lib/useAdminSession";
 import { SubmissionList, ApprovalList } from "./PlayerLists";
 import LeaderBoard from "./LeaderBoard";
 import Link from "next/link";
+import { usePolling } from "@/lib/usePolling";
 
 import { approvalStatuses } from "@/lib/constants";
 
@@ -20,7 +21,10 @@ export default function AdminConventionPage({ params }) {
   const [tab, setTab] = useState("approval");
 
   const loadAll = useCallback(async () => {
-    const [{ data: conv }, { data: leaderboard }, { data: subs }, {data: apps}] = await Promise.all([
+    // Prevent fetching if session/conventionId aren't ready
+    if (!session || !conventionId) return;
+
+    const [{ data: conv }, { data: leaderboard }, { data: subs }, { data: apps }] = await Promise.all([
       supabase.from("conventions").select("*").eq("id", conventionId).single(),
       supabase.from("players").select("*").eq("convention_id", conventionId).eq("approved", approvalStatuses.APPROVED).order("score", { ascending: false }),
       supabase.from("players").select("*").eq("convention_id", conventionId).order("created_at", { ascending: false }),
@@ -31,11 +35,10 @@ export default function AdminConventionPage({ params }) {
     setLeaderBoard(leaderboard ?? []);
     setSubmissions(subs ?? []);
     setApproval(apps ?? []);
-  }, [conventionId]);
+  }, [conventionId, session]);
 
-  useEffect(() => {
-    if (session) loadAll();
-  }, [session, loadAll]);
+  // Poll loadAll every 5000ms (5s) only when session exists, otherwise pass null to pause
+  usePolling(loadAll, session ? 5000 : null);
 
   if (loading || !session) {
     return <p className="text-parchment/50">Checking credentials…</p>;
@@ -84,7 +87,7 @@ export default function AdminConventionPage({ params }) {
 
       {/* Display view */}
       <div className="mb-4">
-        <Link href={`/admin/conventions/${conventionId  }/display`}>
+        <Link href={`/admin/conventions/${conventionId}/display`}>
           <button type="button" className="btn-primary">
             Switch to Display view
           </button>
