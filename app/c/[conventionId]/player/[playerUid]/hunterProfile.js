@@ -513,7 +513,7 @@ function CaptureContent({ conventionId, hunter, target, onClose, onSuccess }) {
   );
 }
 
-function HunterProfileContent({ hunter, score, photoUrl, onClose }) {
+function HunterProfileContent({ hunter, score, photoUrl, onClose, onPhotoDeleted }) {
   const [showConfirm, setShowConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
@@ -541,6 +541,12 @@ function HunterProfileContent({ hunter, score, photoUrl, onClose }) {
 
   const handleDeletePhoto = async () => {
     await removePlayerPhoto(hunter);
+
+    // Call the parent callback to clear the state across the entire page
+    if (onPhotoDeleted) {
+      onPhotoDeleted();
+    }
+
     setShowDeleteConfirm(false);
     setShowPhotoModal(false);
   };
@@ -555,6 +561,7 @@ function HunterProfileContent({ hunter, score, photoUrl, onClose }) {
           className="focus:outline-none focus:ring-2 focus:ring-parchment/50 rounded-2xl transition-transform active:scale-95"
           title="Click to expand photo"
         >
+          {/* 3. Pass updated photo state into Avatar */}
           <Avatar
             src={photoUrl}
             name={hunter.character}
@@ -826,10 +833,11 @@ export default function HunterPage({ convention, hunter, targets }) {
   // Same route used for target photos, called once and reused everywhere
   // this hunter's own photo appears (mission bar avatar + profile modal)
   // instead of resolving a new signed URL per occurrence.
-  const hunterPhotoUrl =
+  const [hunterPhotoUrl, setHunterPhotoUrl] = useState(
     convention?.id && hunter?.app_uid
       ? `/c/${convention.id}/player/${hunter.app_uid}/photo`
-      : null;
+      : null
+  );
 
   if (!hunter) {
     return (
@@ -906,6 +914,7 @@ export default function HunterPage({ convention, hunter, targets }) {
             score={score}
             photoUrl={hunterPhotoUrl}
             onClose={() => setProfileOpen(false)}
+            onPhotoDeleted={() => setHunterPhotoUrl(null)}
           />
         </Modal>
       )}
