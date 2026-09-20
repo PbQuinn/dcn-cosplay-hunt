@@ -4,8 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { randomUUID } from "crypto";
 import { supabase } from "@/lib/supabaseServer";
-import { NR_TARGETS } from "@/lib/constants";
-import { getNewTarget, requestNewTargetAssignment } from "./target";
+import { requestFreshTargetAssignment } from "./target";
 import { stringFromTargetList } from "@/lib/targetList";
 
 export async function createPlayer(conventionId, formData) {
@@ -114,14 +113,8 @@ export async function createPlayer(conventionId, formData) {
             path: "/",
         });
 
+        await requestFreshTargetAssignment(conventionId, appUid);
         
-        let targetList = [];
-        for (let i = 0; i < NR_TARGETS; i++) {
-            let newTarget = await requestNewTargetAssignment(conventionId, appUid, targetList);
-            if (newTarget) {
-                targetList.push(newTarget);
-            }
-        }
 
         // Send the player directly to their page.
         redirect(`/c/${conventionId}/player/${appUid}`);

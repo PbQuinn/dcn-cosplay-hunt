@@ -4,14 +4,15 @@ import { useEffect, useRef, useState } from "react";
 import {
   Camera,
   X,
+  RefreshCcw,
   Search,
   UserRound,
   CircleCheck,
   CircleAlert,
   ChevronRight,
 } from "lucide-react";
-import { NR_TARGETS, approvalStatusLabels } from "@/lib/constants";
-import { checkPlayerCode, performCapture, requestNewTargetAssignment, updatePlayerApproval } from "@/app/actions/target";
+import { NR_TARGETS, REFRESH_COOLDOWN_MINUTES, approvalStatusLabels } from "@/lib/constants";
+import { checkPlayerCode, performCapture, requestFreshTargetAssignment, requestNewTargetAssignment, updatePlayerApproval } from "@/app/actions/target";
 
 function initialsFor(name) {
   if (!name) return "??";
@@ -347,7 +348,7 @@ export function TargetInfoContent({ target, onClose, isAdmin = false }) {
     setIsUpdating(true);
     try {
       const data = await updatePlayerApproval(target, status);
-      
+
       // Update local state so UI updates immediately
       setCurrentApprovedStatus(status);
 
@@ -416,9 +417,9 @@ export function TargetInfoContent({ target, onClose, isAdmin = false }) {
               label="Visibility"
               value={target.invisible ? "Invisible" : "Visible"}
             />
-            <DetailRow 
-              label="Approval" 
-              value={approvalStatusLabels[currentApprovedStatus] || "-"} 
+            <DetailRow
+              label="Approval"
+              value={approvalStatusLabels[currentApprovedStatus] || "-"}
             />
           </dl>
 
@@ -450,6 +451,34 @@ export function TargetInfoContent({ target, onClose, isAdmin = false }) {
           find them, ask for their 4-digit code to score points!
         </p>
       )}
+    </div>
+  );
+}
+
+export function RefreshAllContent({ onClose, onConfirm }) {
+  return (
+    <div>
+      <p className="font-body text-base text-parchment mt-2 mb-6">
+        Are you sure you want to refresh your entire pool? You can only do this once every {REFRESH_COOLDOWN_MINUTES} minutes!
+      </p>
+
+      {/* Side-by-side Buttons */}
+      <div className="flex items-center justify-center gap-3">
+        <button
+          type="button"
+          onClick={() => onClose()}
+          className="px-4 py-2 text-sm rounded-xl border border-parchment/20 text-parchment/80 hover:bg-parchment/10 transition-colors"
+        >
+          No, I want to keep hunting my current list!
+        </button>
+        <button
+          type="button"
+          onClick={() => onConfirm()}
+          className="px-4 py-2 text-sm rounded-xl bg-red-600/80 hover:bg-red-600 text-white font-medium transition-colors"
+        >
+          Yes, I understand
+        </button>
+      </div>
     </div>
   );
 }
@@ -667,34 +696,6 @@ function HunterProfileContent({ hunter, score, photoUrl, onClose }) {
   );
 }
 
-{/* <div className="rounded-lg border border-parchment/10 p-4">
-                <label
-                  htmlFor="invisible"
-                  className="flex cursor-pointer items-start gap-3"
-                >
-                  <input
-                    id="invisible"
-                    type="checkbox"
-                    checked={form.invisible}
-                    onChange={(e) =>
-                      updateForm("invisible", e.target.checked)
-                    }
-                    className="mt-1 h-4 w-4"
-                  />
-
-                  <span>
-                    <span className="block font-bold">
-                      Invisible
-                    </span>
-
-                    <span className="mt-1 block text-sm text-parchment/50">
-                      Hide my cosplay from the public hunt. If unchecked,
-                      you must provide a photo.
-                    </span>
-                  </span>
-                </label>
-              </div> */}
-
 // ---------------------------------------------------------------------------
 // Top mission bar
 // ---------------------------------------------------------------------------
@@ -735,6 +736,13 @@ function MissionBar({ hunter, score, photoUrl, onOpenProfile }) {
   );
 }
 
+function refreshPool( conventionId, hunterId, setCurrentTargets ) {
+  requestFreshTargetAssignment(
+                  convention.id,
+                  hunter?.app_uid
+                )
+}
+
 // ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
@@ -746,6 +754,7 @@ export default function HunterPage({ convention, hunter, targets }) {
   const [score, setScore] = useState(hunter?.score ?? 0);
   const [currentTargets, setCurrentTargets] = useState(targets);
   const [showNoCharFoundModal, setShowNoCharFoundModal] = useState(false);
+  const [refreshAll, setRefreshAll] = useState(null);
 
   async function handleCaptureSuccess(conventionId, hunterId, targetId) {
     const { targets, score, error } = await performCapture(conventionId, hunterId, targetId);
@@ -755,6 +764,13 @@ export default function HunterPage({ convention, hunter, targets }) {
       setScore(score);
     }
   }
+
+  async function handleTargetRefresh(conventionId, hunterId) {
+    setRefreshAll(null)
+    setCurrentTargets([])
+    const newTargets = await requestFreshTargetAssignment(conventionId, hunterId)
+    setCurrentTargets(newTargets); 
+  } 
 
   const blanksCount = Math.max(0, NR_TARGETS - currentTargets.length);
   const displayTargets = [
@@ -782,7 +798,7 @@ export default function HunterPage({ convention, hunter, targets }) {
   }
 
   return (
-    <div className="bg-grain relative mx-auto min-h-screen max-w-[560px] bg-ink bg-repeat font-body text-parchment">
+    <div className="bg-grain relative mx-auto max-w-[560px] bg-ink bg-repeat font-body text-parchment">
       <MissionBar
         hunter={hunter}
         score={score}
@@ -817,6 +833,17 @@ export default function HunterPage({ convention, hunter, targets }) {
               />
           })}
         </ul>
+        <button
+          onClick={() => { setRefreshAll(true) }
+          }
+          disabled={false}
+          className={
+            "flex w-[70%] mx-auto items-center justify-center gap-3 rounded-xl border border-subtle bg-ink py-3 font-body text-[14.5px] font-semibold text-subtle"
+          }
+        >
+          <RefreshCcw size={17} strokeWidth={2.25} />
+          {"Request new targets"}
+        </button>
       </main>
 
       {infoTargetId && (
@@ -850,7 +877,6 @@ export default function HunterPage({ convention, hunter, targets }) {
       )}
 
       {infoTargetId && (
-
         <Modal labelledBy="target-info-title" onClose={() => setInfoTargetId(null)}>
           <TargetInfoContent target={displayTargets.find((t) => t.app_uid === infoTargetId)} onClose={() => setInfoTargetId(null)} />
         </Modal>
@@ -858,7 +884,17 @@ export default function HunterPage({ convention, hunter, targets }) {
 
       {showNoCharFoundModal && (
         <Modal labelledBy="capture-title" onClose={() => setCaptureTarget(null)}>
-          <NoCharFoundModal onClose={setShowNoCharFoundModal}/>
+          <NoCharFoundModal onClose={setShowNoCharFoundModal} />
+        </Modal>
+      )}
+
+      {refreshAll && (
+        <Modal labelledBy="target-info-title" onClose={() => setRefreshAll(null)}>
+          <RefreshAllContent 
+          onClose={
+            () => setRefreshAll(null)
+          }
+          onConfirm={() => handleTargetRefresh(convention.id, hunter.app_uid)} />
         </Modal>
       )}
     </div>

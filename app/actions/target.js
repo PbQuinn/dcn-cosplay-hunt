@@ -59,46 +59,66 @@ export async function getNewTarget(conventionId, hunterId, currentTargets) {
 export async function getHunterTargetIds(conventionId, hunterId) {
   return new Promise(async (resolve) => {
     /* Select all hunters not equal to the requesting hunter */
-    const { data: hunterLine, error } = await supabase
+    let { data: hunterLine, error } = await supabase
       .from("players")
-      .select("targets")
+      .select("*")
       .eq("convention_id", conventionId)
       .eq("app_uid", hunterId)
-      .single()
 
+    if (hunterLine.length > 0) {
+      hunterLine = hunterLine[0]
+    }
     resolve(targetListFromString(hunterLine?.targets))
   })
 }
-
-/* Request a new target */
+// f9e13058-4acb-49fb-b494-869b7f291187 786f2e7b-1a12-4be9-a829-fde41cfbea72
+/* Request a new target */ 
 export async function requestNewTargetAssignment(conventionId, hunterId) {
 
   let currentTargets = await getHunterTargetIds(conventionId, hunterId);
   // Don't add a target if the player is already capped
-  console.log("Pulling")
 
   if (currentTargets.length >= NR_TARGETS) return { newTarget: undefined, targets: currentTargets };
   const { newTarget, error } = await getNewTarget(conventionId, hunterId, currentTargets);
-  console.log("the targets", newTarget);
   if (!newTarget) return { newTarget: undefined, targets: currentTargets, error: error }
 
   currentTargets.push(newTarget);
+  let targetListString = stringFromTargetList(currentTargets);
 
   const { data, updateError } = await supabase
     .from("players")
-    .update({ "targets": stringFromTargetList(currentTargets) })
+    .update({ "targets": targetListString})
     .eq("convention_id", conventionId)
     .eq("app_uid", hunterId)
 
   return { newTarget: newTarget, targets: await getTargetProfiles(conventionId, hunterId), error: updateError }
 }
 
+export async function requestFreshTargetAssignment(conventionId, appUid) {
+  return new Promise ( async (resolve) => {
+    const { data, updateError } = await supabase
+      .from("players")
+      .update({ "targets": "" })
+      .eq("convention_id", conventionId)
+      .eq("app_uid", appUid)
+
+      let newTargets = []
+      for (let i = 0; i < NR_TARGETS; i++) {
+          let { newTarget, targets, error } = await requestNewTargetAssignment(conventionId, appUid);
+          newTargets = targets
+      }
+      resolve(newTargets)
+  })
+  
+}
+
 /* Returns the player-visible data for the targets of a given hunter */
 export async function getTargetProfiles(conventionId, hunterId) {
   const targetIds = await getHunterTargetIds(conventionId, hunterId);
-  return (
-    await Promise.all(targetIds.map((id) => getTargetInformation(id, conventionId, hunterId)))
-  ).filter(Boolean);
+  let ret = (
+    await Promise.all(targetIds.map(async (id) => await getTargetInformation(id, conventionId, hunterId)))
+  ).filter(Boolean)
+  return ret;
 }
 
 // Internal base fetcher (not exported as a server action)

@@ -30,7 +30,7 @@ export default function RootLayout({ children }) {
 
   return (
     <html lang="en" className={`${display.variable} ${body.variable} ${mono.variable}`}>
-      <body className="min-h-screen bg-grain">
+      <body className="min-h-screen min-h-dvh max-h-dvh bg-grain">
         {!isDisplayPage && (
           <header className="border-b border-parchment/10">
             <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
@@ -47,15 +47,9 @@ export default function RootLayout({ children }) {
           </header>
         )}
 
-        <main className={isDisplayPage ? "" : "mx-auto max-w-5xl px-6 py-10"}>
+        <main className={isDisplayPage ? "" : "mx-auto max-w-5xl px-6"}>
           {children}
         </main>
-
-        {!isDisplayPage && (
-          <footer className="mx-auto max-w-5xl px-6 py-10 text-xs text-parchment/40">
-            Built for spotting cosplayers, one square at a time.
-          </footer>
-        )}
       </body>
     </html>
   );

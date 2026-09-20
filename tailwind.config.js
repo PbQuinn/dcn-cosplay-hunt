@@ -21,6 +21,7 @@ module.exports = {
         },
         sage: "#7C9885",
         gold: "#D4AF37",
+        subtle: "#5e6cbb"
       },
       fontFamily: {
         display: ["var(--font-display)"],
