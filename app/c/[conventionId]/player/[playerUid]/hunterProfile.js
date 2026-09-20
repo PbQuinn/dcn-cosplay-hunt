@@ -541,6 +541,7 @@ function HunterProfileContent({ hunter, score, photoUrl, onClose, onPhotoDeleted
 
   const handleDeletePhoto = async () => {
     await removePlayerPhoto(hunter);
+    updateVisibilityStatus(true); // Set the player to invisible after deleting the photo
 
     // Call the parent callback to clear the state across the entire page
     if (onPhotoDeleted) {
@@ -669,7 +670,7 @@ function HunterProfileContent({ hunter, score, photoUrl, onClose, onPhotoDeleted
             </button>
 
             <p className="font-body text-base text-parchment mt-2 mb-6">
-              Are you sure you want to delete your photo? This action cannot be undone.
+              Are you sure you want to delete your photo? It is currently not possible to reupload a photo, so you will be put in invisible mode.
             </p>
 
             <div className="flex items-center justify-center gap-3">
