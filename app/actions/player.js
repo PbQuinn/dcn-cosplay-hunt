@@ -79,10 +79,10 @@ export async function createPlayer(conventionId, formData) {
         targets: "", // Character is populated with targets only upon succesful creation
         created_at: new Date().toISOString(),
         // User provided fields
-        name: name.toString().trim(),
-        contact: contact.toString().trim(),
-        character: character.toString().trim(),
-        series: series.toString().trim(),
+        name: name.toString().trim() || "",
+        contact: contact?.toString().trim() || "",
+        character: character?.toString().trim() || "",
+        series: series?.toString().trim() || "",
         description: description?.toString().trim() || "",
         invisible,
         image_url: photoPath,
@@ -99,15 +99,6 @@ export async function createPlayer(conventionId, formData) {
         console.error(error);
         throw new Error("Could not create your player.");
     } else {
-
-        // Populate character with targets
-        let targetList = [];
-        for (let i = 0; i < NR_TARGETS; i++) {
-            let newTarget = await requestNewTargetAssignment(conventionId, appUid);
-            if (newTarget) {
-                targetList.push(newTarget);
-            }
-        }
 
         // Set a persistent cookie.
         const cookieStore = await cookies();
