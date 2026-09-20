@@ -25,6 +25,35 @@ export default function ConventionDisplayPage({ params }) {
             .eq("approved", approvalStatuses.APPROVED)
             .order("score", { ascending: false });
 
+        console.log("Fetching for conventionId:", conventionId);
+
+        const { data: captures, error } = await supabase
+            .from("captures")
+            .select("*")
+            .eq("convention_id", conventionId)
+            .order("capture_time", { ascending: false });
+            // .limit(3);
+
+        if (error) {
+            console.error("Supabase Query Error:", error);
+        }
+
+        console.log("Captures result:", captures);
+
+        // Guard against empty array to prevent unnecessary or invalid queries
+        const targetIds = captures?.map((c) => c.target_id) ?? [];
+        const hunterIds = captures?.map((c) => c.hunter_id) ?? [];
+
+        const { data: targets } = await supabase
+            .from("players")
+            .select("*")
+            .in("id", targetIds);
+
+        const { data: hunters } = await supabase
+            .from("players")
+            .select("*")
+            .in("id", hunterIds);
+
         setLeaderBoard(leaderboard ?? []);
     }, [conventionId, session]);
 
@@ -71,6 +100,7 @@ export default function ConventionDisplayPage({ params }) {
                 {/* Right Column */}
                 <section className="flex h-full flex-col items-center justify-center text-center">
                     <p className="eyebrow mb-3 text-xl">Latest captures</p>
+
                 </section>
 
                 {/* Return Link */}
