@@ -6,6 +6,7 @@ import { useAdminSession } from "@/lib/useAdminSession";
 import { supabase } from "@/lib/supabaseClient";
 import { approvalStatuses } from "@/lib/constants";
 import LeaderBoard from "../LeaderBoard";
+import { usePolling } from "@/lib/usePolling";
 
 export default function ConventionDisplayPage({ params }) {
     const { session, loading } = useAdminSession();
@@ -14,6 +15,9 @@ export default function ConventionDisplayPage({ params }) {
     const [leaderBoard, setLeaderBoard] = useState([]);
 
     const loadAll = useCallback(async () => {
+        // Prevent fetching if session/conventionId aren't ready
+        if (!session || !conventionId) return;
+
         const { data: leaderboard } = await supabase
             .from("players")
             .select("*")
@@ -22,13 +26,12 @@ export default function ConventionDisplayPage({ params }) {
             .order("score", { ascending: false });
 
         setLeaderBoard(leaderboard ?? []);
-    }, [conventionId]);
+    }, [conventionId, session]);
 
-    useEffect(() => {
-        if (session) loadAll();
-    }, [session, loadAll]);
+    // Poll loadAll every 5000ms (5s) only when session exists, otherwise pass null to pause
+    usePolling(loadAll, session ? 5000 : null);
 
-    if (loading) {
+    if (loading || !session) {
         return (
             <div className="flex h-screen items-center justify-center p-[5vh]">
                 <p className="text-parchment/50">Loading…</p>
@@ -71,12 +74,12 @@ export default function ConventionDisplayPage({ params }) {
                 </section>
 
                 {/* Return Link */}
-            <Link
-                href={`/admin/conventions/${conventionId}`}
-                className="absolute bottom-6 left-6 font-mono text-xs text-parchment/40 transition-colors hover:text-parchment"
-            >
-                ← Return
-            </Link>
+                <Link
+                    href={`/admin/conventions/${conventionId}`}
+                    className="absolute bottom-6 left-6 font-mono text-xs text-parchment/40 transition-colors hover:text-parchment"
+                >
+                    ← Return
+                </Link>
             </div>
         </div>
     );
