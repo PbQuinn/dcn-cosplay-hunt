@@ -17,12 +17,30 @@ export async function createPlayer(conventionId, formData) {
     const series = formData.get("series");
     const photo = formData.get("photo");
 
-    // Validate
+    // Name is required
     if (!name) {
         throw new Error("Please fill in all required fields.");
     }
-    if (!invisible && (!(photo instanceof File) && !(character instanceof File) && !(series instanceof File))) {
+    // Validate all fields for "null"
+    if (!!name && name === null) {
+        throw new Error("The entered name cannot be processed, please change it");
+    }
+    if (!!contact && contact === null) {
+        throw new Error("The entered contact cannot be processed, please change it, or leave it blank");
+    }
+    if (!!description && description === null) {
+        throw new Error("The entered description be processed, please change it, or leave it blank");
+    }
+    // If visible, all other fields are also required
+    if (!invisible && (!(photo instanceof File) || !(character) && !(series))) {
         throw new Error("Please fill in all required fields.");
+    }
+    // If visible, also validate all fields for "null"
+    if (!invisible && character === null) {
+        throw new Error("The entered character name cannot be processed, please change it");
+    }
+    if (!invisible && series === null) {
+        throw new Error("The entered series name cannot be processed, please change it");
     }
 
     // Generate the player's permanent identifier on the server.
@@ -58,7 +76,7 @@ export async function createPlayer(conventionId, formData) {
         convention_id: conventionId,
         app_uid: appUid,
         code: Math.ceil(Math.random() * 9999),
-        targets: "",
+        targets: "", // Character is populated with targets only upon succesful creation
         created_at: new Date().toISOString(),
         // User provided fields
         name: name.toString().trim(),
@@ -104,6 +122,15 @@ export async function createPlayer(conventionId, formData) {
 
             path: "/",
         });
+
+        
+        let targetList = [];
+        for (let i = 0; i < NR_TARGETS; i++) {
+            let newTarget = await requestNewTargetAssignment(conventionId, appUid, targetList);
+            if (newTarget) {
+                targetList.push(newTarget);
+            }
+        }
 
         // Send the player directly to their page.
         redirect(`/c/${conventionId}/player/${appUid}`);
