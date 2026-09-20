@@ -556,19 +556,25 @@ function HunterProfileContent({ hunter, score, photoUrl, onClose, onPhotoDeleted
     <div className="relative">
       <ModalCloseButton onClose={onClose} />
       <div className="mb-3.5 flex items-center gap-3.5">
-        <button
-          type="button"
-          onClick={() => photoUrl && setShowPhotoModal(true)}
-          className="focus:outline-none focus:ring-2 focus:ring-parchment/50 rounded-2xl transition-transform active:scale-95"
-          title="Click to expand photo"
-        >
-          {/* 3. Pass updated photo state into Avatar */}
+        {!hunter.invisible ? (
+          <button
+            type="button"
+            onClick={() => photoUrl && setShowPhotoModal(true)}
+            className="focus:outline-none focus:ring-2 focus:ring-parchment/50 rounded-2xl transition-transform active:scale-95"
+            title="Click to expand photo"
+          >
+            <Avatar
+              src={photoUrl}
+              name={hunter.character}
+              className="h-16 w-16 rounded-2xl text-lg cursor-pointer hover:opacity-90 transition-opacity"
+            />
+          </button>) : (
           <Avatar
             src={photoUrl}
             name={hunter.character}
             className="h-16 w-16 rounded-2xl text-lg cursor-pointer hover:opacity-90 transition-opacity"
           />
-        </button>
+        )}
         <div>
           <Eyebrow>{hunter.series || "Invisible"}</Eyebrow>
           <h2
