@@ -37,7 +37,7 @@ export function SubmissionList({ submissions }) {
 
   return (
     <>
-      <ul className="card-shell max-h-96 space-y-2 overflow-y-auto">
+      <ul className="card-shell max-h-96 space-y-2 overflow-y-auto bg-parchment/5">
         {submissions.map((s) => (
           <li
             key={s.id}
@@ -81,7 +81,7 @@ export function ApprovalList({ submissions }) {
 
   return (
     <>
-      <ul className="card-shell max-h-96 space-y-2 overflow-y-auto">
+      <ul className="card-shell max-h-96 space-y-2 overflow-y-auto bg-parchment/5">
         {submissions.map((s) => (
           <li
             key={s.id}

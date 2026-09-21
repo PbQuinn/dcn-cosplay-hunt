@@ -29,8 +29,6 @@ function Avatar({ src, name, isInvisible, className = "h-24 w-24 rounded-2xl" })
     const [errored, setErrored] = useState(false);
     const showImage = Boolean(src) && !errored && !isInvisible;
 
-    console.log(src);
-
     // Simple initial generator
     const initials = name
         ? name
@@ -91,6 +89,7 @@ export default function ConventionDisplayPage({ params }) {
     const conventionId = params.id;
 
     const [leaderBoard, setLeaderBoard] = useState([]);
+    const [latestCaptures, setCaptures] = useState([]);
     const [currentTargets, setTargets] = useState([]);
     const [currentHunters, setHunters] = useState([]);
 
@@ -112,16 +111,33 @@ export default function ConventionDisplayPage({ params }) {
         const hunterIds = latestCaptures?.map((c) => c.hunter_id) ?? [];
         const targetIds = latestCaptures?.map((c) => c.target_id) ?? [];
 
-        const hunters = await loadPlayerFromUid(hunterIds);
-        const targets = await loadPlayerFromUid(targetIds);
+        // Fetch unique players from backend
+        const fetchedHunters = await loadPlayerFromUid(hunterIds);
+        const fetchedTargets = await loadPlayerFromUid(targetIds);
 
-        // Map by ID/UID for fast lookup inside rendering
-        const hMap = (hunters || []).reduce((acc, h) => ({ ...acc, [h.id || h.uid]: h }), {});
-        const tMap = (targets || []).reduce((acc, t) => ({ ...acc, [t.id || t.uid]: t }), {});
+        // Normalize fetched results into standard arrays
+        const uniqueHunters = Array.isArray(fetchedHunters)
+            ? fetchedHunters
+            : fetchedHunters
+                ? [fetchedHunters]
+                : [];
+        const uniqueTargets = Array.isArray(fetchedTargets)
+            ? fetchedTargets
+            : fetchedTargets
+                ? [fetchedTargets]
+                : [];
 
-        console.log(hMap);
+        // Re-map over the original ID lists to preserve duplicate occurrences and exact order
+        const hunters = hunterIds.map((id) =>
+            uniqueHunters.find((player) => (player.app_uid || player.uid) === id) || null
+        );
+
+        const targets = targetIds.map((id) =>
+            uniqueTargets.find((player) => (player.app_uid || player.uid) === id) || null
+        );
 
         setLeaderBoard(Array.isArray(leaderboard) ? leaderboard : []);
+        setCaptures(Array.isArray(latestCaptures) ? latestCaptures : []);
         setHunters(Array.isArray(hunters) ? hunters : hunters ? [hunters] : []);
         setTargets(Array.isArray(targets) ? targets : targets ? [targets] : []);
     }, [conventionId, session]);
@@ -177,6 +193,14 @@ export default function ConventionDisplayPage({ params }) {
                                 // Find the original index to match the corresponding target correctly
                                 const originalIndex = currentHunters.length - 1 - reversedIndex;
                                 const target = currentTargets?.[originalIndex];
+                                const captureTime = latestCaptures?.[originalIndex].capture_time;
+                                const formattedTime = new Date(captureTime).toLocaleTimeString("en-GB", {
+                                    timeZone: "Europe/Amsterdam",
+                                    hour12: false,
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                    second: "2-digit",
+                                });
 
                                 return (
                                     <div
@@ -186,9 +210,14 @@ export default function ConventionDisplayPage({ params }) {
                                         {/* Hunter */}
                                         <PlayerCard player={hunter} conventionId={conventionId} />
 
-                                        <span className="font-mono text-sm font-bold uppercase text-parchment/40">
-                                            has captured
-                                        </span>
+                                        <div className="flex flex-col items-center font-mono text-sm font-bold uppercase text-parchment/40">
+                                            <span className="font-mono text-sm font-bold uppercase text-parchment/40">
+                                                has captured
+                                            </span>
+                                            <span className="text-xs normal-case tracking-normal opacity-80 mt-0.5">
+                                                at {formattedTime}
+                                            </span>
+                                        </div>
 
                                         {/* Target */}
                                         <PlayerCard player={target} conventionId={conventionId} />
