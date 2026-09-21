@@ -1,12 +1,13 @@
-"use client";
+"use client"
 
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useAdminSession } from "@/lib/useAdminSession";
-import { supabase } from "@/lib/supabaseClient";
 import { approvalStatuses } from "@/lib/constants";
 import LeaderBoard from "../LeaderBoard";
 import { usePolling } from "@/lib/usePolling";
+import { loadCaptures } from "@/app/actions/target";
+import { loadPlayers, loadPlayerFromUid } from "@/app/actions/player";
 
 export default function ConventionDisplayPage({ params }) {
     const { session, loading } = useAdminSession();
@@ -18,41 +19,22 @@ export default function ConventionDisplayPage({ params }) {
         // Prevent fetching if session/conventionId aren't ready
         if (!session || !conventionId) return;
 
-        const { data: leaderboard } = await supabase
-            .from("players")
-            .select("*")
-            .eq("convention_id", conventionId)
-            .eq("approved", approvalStatuses.APPROVED)
-            .order("score", { ascending: false });
+        const players = await loadPlayers(conventionId);
+        const leaderboard = players
+            .filter((player) => player.approved === approvalStatuses.APPROVED)
+            .sort((a, b) => b.score - a.score);
 
-        console.log("Fetching for conventionId:", conventionId);
-
-        const { data: captures, error } = await supabase
-            .from("captures")
-            .select("*")
-            .eq("convention_id", conventionId)
-            .order("capture_time", { ascending: false });
-            // .limit(3);
-
-        if (error) {
-            console.error("Supabase Query Error:", error);
-        }
-
-        console.log("Captures result:", captures);
+        const captures = await loadCaptures(conventionId);
+        const latestCaptures = (captures || [])
+            .sort((a, b) => new Date(b.capture_time) - new Date(a.capture_time))
+            .slice(0, 3);
 
         // Guard against empty array to prevent unnecessary or invalid queries
-        const targetIds = captures?.map((c) => c.target_id) ?? [];
-        const hunterIds = captures?.map((c) => c.hunter_id) ?? [];
+        const targetIds = latestCaptures?.map((c) => c.target_id) ?? [];
+        const hunterIds = latestCaptures?.map((c) => c.hunter_id) ?? [];
 
-        const { data: targets } = await supabase
-            .from("players")
-            .select("*")
-            .in("id", targetIds);
-
-        const { data: hunters } = await supabase
-            .from("players")
-            .select("*")
-            .in("id", hunterIds);
+        const targets = await loadPlayerFromUid(targetIds);
+        const hunters = await loadPlayerFromUid(hunterIds);
 
         setLeaderBoard(leaderboard ?? []);
     }, [conventionId, session]);
