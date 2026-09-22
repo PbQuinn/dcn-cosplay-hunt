@@ -788,7 +788,7 @@ export default function HunterPage({ convention, hunter, targets }) {
 
   if (!hunter) {
     return (
-      <div className="bg-grain flex min-h-screen items-center justify-center bg-ink bg-repeat px-10 text-center">
+      <div className="bg-grain flex items-center justify-center bg-ink bg-repeat px-10 text-center">
         <p className="font-body text-parchment/60">
           No hunter profile found for this device. Check in at the
           registration desk to get your badge and target list.
@@ -798,7 +798,7 @@ export default function HunterPage({ convention, hunter, targets }) {
   }
 
   return (
-    <div className="bg-grain relative mx-auto min-h-screen max-w-[560px] bg-ink bg-repeat font-body text-parchment">
+    <div className="bg-grain relative mx-auto max-w-[560px] bg-ink bg-repeat font-body text-parchment">
       <MissionBar
         hunter={hunter}
         score={score}
@@ -806,11 +806,7 @@ export default function HunterPage({ convention, hunter, targets }) {
         onOpenProfile={() => setProfileOpen(true)}
       />
 
-      <main className="pb-10 pt-4.5">
-        <p className="mb-3.5 px-4 font-mono text-[11px] uppercase tracking-wide text-parchment/50">
-          {convention?.name ? `${convention.name}` : "Convention Info Unavailable"}
-        </p>
-
+      <main className="pb-1 pt-4.5">
         <ul
           role="list"
           className="m-0 flex snap-x snap-mandatory gap-3.5 overflow-x-auto px-4 pb-2.5 pt-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
