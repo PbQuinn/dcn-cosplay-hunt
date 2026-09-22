@@ -98,12 +98,19 @@ export default function ConventionDisplayPage({ params }) {
         if (!session || !conventionId) return;
 
         const players = await loadPlayers(conventionId);
+        const playerMap = new Map(
+            (players || []).map((p) => [p.app_uid || p.uid, p])
+        );
         const leaderboard = players
             .filter((player) => player.approved === approvalStatuses.APPROVED)
             .sort((a, b) => b.score - a.score);
 
         const captures = await loadCaptures(conventionId);
-        const latestCaptures = (captures || [])
+        const approvedCaptures = (captures || []).filter((capture) => {
+            const hunter = playerMap.get(capture.hunter_id);
+            return hunter && hunter.approved === approvalStatuses.APPROVED;
+        });
+        const latestCaptures = approvedCaptures
             .sort((a, b) => new Date(b.capture_time) - new Date(a.capture_time))
             .slice(0, 3);
 
@@ -189,11 +196,9 @@ export default function ConventionDisplayPage({ params }) {
                         {!Array.isArray(currentHunters) || currentHunters.length === 0 ? (
                             <p className="text-sm text-parchment/50">No recent captures yet.</p>
                         ) : (
-                            [...currentHunters].reverse().map((hunter, reversedIndex) => {
-                                // Find the original index to match the corresponding target correctly
-                                const originalIndex = currentHunters.length - 1 - reversedIndex;
-                                const target = currentTargets?.[originalIndex];
-                                const captureTime = latestCaptures?.[originalIndex].capture_time;
+                            currentHunters.map((hunter, index) => {
+                                const target = currentTargets?.[index];
+                                const captureTime = latestCaptures?.[index].capture_time;
                                 const formattedTime = new Date(captureTime).toLocaleTimeString("en-GB", {
                                     timeZone: "Europe/Amsterdam",
                                     hour12: false,
