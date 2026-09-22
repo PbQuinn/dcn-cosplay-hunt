@@ -5,6 +5,14 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabaseClient";
 import { useAdminSession } from "@/lib/useAdminSession";
 
+function formatDate(date) {
+  return new Date(date).toLocaleDateString('en-GB', {
+    day: 'numeric',
+    month: 'numeric',
+    year: 'numeric'
+  })
+};
+
 export default function AdminDashboard() {
   const { session, loading } = useAdminSession();
   const [conventions, setConventions] = useState([]);
@@ -63,7 +71,6 @@ export default function AdminDashboard() {
     <div>
       <div className="mb-8 flex items-center justify-between">
         <div>
-          <p className="eyebrow mb-3">Admin</p>
           <h1 className="text-4xl font-bold">Conventions</h1>
         </div>
         <button className="btn-secondary" onClick={handleSignOut}>
@@ -89,7 +96,7 @@ export default function AdminDashboard() {
                 >
                   {c.name}
                   <span className="ml-2 font-mono text-xs text-parchment/40">
-                    {c.start_date} – {c.end_date}
+                    {formatDate(c.start_date)} – {formatDate(c.end_date)}
                   </span>
                 </Link>
               </li>
