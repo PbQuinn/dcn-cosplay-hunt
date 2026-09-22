@@ -198,10 +198,22 @@ function TargetCard({ target, captured, onOpenInfo, onOpenCapture }) {
   const [errored, setErrored] = useState(false);
   const showImage = Boolean(target?.photoUrl) && !errored;
 
+  const handleInfoClick = () => {
+    onOpenInfo(target?.app_uid);
+  };
+
+  const handleImageError = () => {
+    setErrored(true);
+  };
+
+  const handleCaptureClick = () => {
+    onOpenCapture(target);
+  };
+
   return (
     <li className="flex w-[76vw] max-w-[320px] flex-none snap-center flex-col gap-2.5 rounded-2xl border border-parchment/10 bg-ink-light p-2.5">
       <button
-        onClick={() => onOpenInfo(target?.app_uid)}
+        onClick={handleInfoClick}
         aria-label={`View details for ${target?.character}`}
         className="relative block aspect-[4/5] w-full cursor-pointer overflow-hidden rounded-xl bg-ink"
       >
@@ -209,7 +221,7 @@ function TargetCard({ target, captured, onOpenInfo, onOpenCapture }) {
           <img
             src={target?.photoUrl}
             alt={target?.character}
-            onError={() => setErrored(true)}
+            onError={handleImageError}
             className="h-full w-full object-cover"
           />
         ) : (
@@ -244,7 +256,7 @@ function TargetCard({ target, captured, onOpenInfo, onOpenCapture }) {
       </div>
 
       <button
-        onClick={() => { onOpenCapture(target) }}
+        onClick={handleCaptureClick}
         disabled={captured}
         className={
           captured
@@ -347,7 +359,7 @@ export function TargetInfoContent({ target, onClose, isAdmin = false }) {
     setIsUpdating(true);
     try {
       const data = await updatePlayerApproval(target, status);
-      
+
       // Update local state so UI updates immediately
       setCurrentApprovedStatus(status);
 
@@ -416,9 +428,9 @@ export function TargetInfoContent({ target, onClose, isAdmin = false }) {
               label="Visibility"
               value={target.invisible ? "Invisible" : "Visible"}
             />
-            <DetailRow 
-              label="Approval" 
-              value={approvalStatusLabels[currentApprovedStatus] || "-"} 
+            <DetailRow
+              label="Approval"
+              value={approvalStatusLabels[currentApprovedStatus] || "-"}
             />
           </dl>
 
@@ -464,7 +476,9 @@ function CaptureContent({ conventionId, hunter, target, onClose, onSuccess }) {
     if (correct) {
       setStatus("success");
       onSuccess(conventionId, hunter.app_uid, target.app_uid);
-      setTimeout(onClose, 900);
+      setTimeout(() => {
+        onClose();
+      }, 900);
     } else {
       setStatus("error");
     }
@@ -472,7 +486,9 @@ function CaptureContent({ conventionId, hunter, target, onClose, onSuccess }) {
 
   return (
     <div className="relative pt-1">
-      <ModalCloseButton onClose={onClose} />
+      <ModalCloseButton onClose={() => {
+        onClose();
+      }} />
       <Eyebrow>Log a capture</Eyebrow>
       <h2 id="capture-title" className="mb-2 mt-0.5 font-display text-3xl text-parchment">
         {target.character}
@@ -827,13 +843,19 @@ export default function HunterPage({ convention, hunter, targets }) {
       )}
 
       {captureTarget && (
-        <Modal labelledBy="capture-title" onClose={() => setCaptureTarget(null)}>
+        <Modal labelledBy="capture-title" onClose={() => {
+          setCaptureTarget(null);
+        }}>
           <CaptureContent
             conventionId={convention.id}
             hunter={hunter}
             target={captureTarget}
-            onClose={() => setCaptureTarget(null)}
-            onSuccess={handleCaptureSuccess}
+            onClose={() => {
+              setCaptureTarget(null);
+            }}
+            onSuccess={(...args) => {
+              handleCaptureSuccess(...args);
+            }}
           />
         </Modal>
       )}
@@ -858,7 +880,7 @@ export default function HunterPage({ convention, hunter, targets }) {
 
       {showNoCharFoundModal && (
         <Modal labelledBy="capture-title" onClose={() => setCaptureTarget(null)}>
-          <NoCharFoundModal onClose={setShowNoCharFoundModal}/>
+          <NoCharFoundModal onClose={setShowNoCharFoundModal} />
         </Modal>
       )}
     </div>

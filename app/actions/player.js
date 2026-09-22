@@ -75,7 +75,7 @@ export async function createPlayer(conventionId, formData) {
         // Database fields
         convention_id: conventionId,
         app_uid: appUid,
-        code: Math.ceil(Math.random() * 9999),
+        code: String(Math.ceil(Math.random() * 9999)).padStart(4, "0"),
         targets: "", // Character is populated with targets only upon succesful creation
         created_at: new Date().toISOString(),
         // User provided fields
