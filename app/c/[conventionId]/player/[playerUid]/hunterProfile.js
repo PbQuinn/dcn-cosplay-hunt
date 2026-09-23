@@ -623,26 +623,68 @@ function CaptureContent({ conventionId, hunter, target, onClose, onSuccess }) {
   );
 }
 
-function HunterProfileContent({ hunter, score, photoUrl, onClose }) {
+function HunterProfileContent({ hunter, score, photoUrl, onClose, onPhotoDeleted }) {
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [currentVisibilityStatus, setCurrentVisibilityStatus] = useState(hunter?.invisible);
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const updateVisibilityStatus = async (status) => {
+    if (!hunter?.id) return;
+
+    setIsUpdating(true);
+    try {
+      const data = await updatePlayerVisibility(hunter, status);
+
+      // Update local state so UI updates immediately
+      setCurrentVisibilityStatus(status);
+
+      // Close the confirmation modal on success
+      setShowConfirm(false);
+    } catch (err) {
+      console.error("Failed to update status:", err);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleDeletePhoto = async () => {
+    await removePlayerPhoto(hunter);
+    updateVisibilityStatus(true); // Set the player to invisible after deleting the photo
+
+    // Call the parent callback to clear the state across the entire page
+    if (onPhotoDeleted) {
+      onPhotoDeleted();
+    }
+
+    setShowDeleteConfirm(false);
+    setShowPhotoModal(false);
+  };
 
   return (
     <div className="relative">
       <ModalCloseButton onClose={onClose} />
       <div className="mb-3.5 flex items-center gap-3.5">
-        <button
-          type="button"
-          onClick={() => photoUrl && setShowPhotoModal(true)}
-          className="focus:outline-none focus:ring-2 focus:ring-parchment/50 rounded-2xl transition-transform active:scale-95"
-          title="Click to expand photo"
-        >
+        {!hunter.invisible ? (
+          <button
+            type="button"
+            onClick={() => photoUrl && setShowPhotoModal(true)}
+            className="focus:outline-none focus:ring-2 focus:ring-parchment/50 rounded-2xl transition-transform active:scale-95"
+            title="Click to expand photo"
+          >
+            <Avatar
+              src={photoUrl}
+              name={hunter.character}
+              className="h-16 w-16 rounded-2xl text-lg cursor-pointer hover:opacity-90 transition-opacity"
+            />
+          </button>) : (
           <Avatar
             src={photoUrl}
             name={hunter.character}
             className="h-16 w-16 rounded-2xl text-lg cursor-pointer hover:opacity-90 transition-opacity"
           />
-        </button>
+        )}
         <div>
           <Eyebrow>{hunter.series || "Invisible"}</Eyebrow>
           <h2
@@ -667,31 +709,30 @@ function HunterProfileContent({ hunter, score, photoUrl, onClose }) {
         <DetailRow label="Contact" value={hunter.contact || "—"} />
       </dl>
 
+      {!hunter.invisible && (
+        <div className="mt-2 flex justify-center">
+          <a href="#">
+            <button
+              type="button"
+              className="btn-primary px-5 py-2.5 text-sm"
+              onClick={() => setShowConfirm(true)}
+            >
+              Go invisible
+            </button>
+          </a>
+        </div>
+      )}
 
-
-      <div className="mt-2 flex justify-center">
-        <a href="#">
-          <button
-            type="button"
-            className="btn-primary px-5 py-2.5 text-sm"
-            onClick={() => setShowConfirm(true)}
-          >
-            Go invisible
-          </button>
-        </a>
-      </div>
-
+      {/* Visibility Confirmation Modal */}
       {showConfirm && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
           onClick={() => setShowConfirm(false)}
         >
-          {/* Pop-up Box (onClick stopPropagation prevents clicks inside from closing it) */}
           <div
             className="relative w-full max-w-sm rounded-2xl bg-[#1e2342] p-6 text-center shadow-xl border border-parchment/10"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Close Cross Button */}
             <button
               type="button"
               onClick={() => setShowConfirm(false)}
@@ -705,7 +746,6 @@ function HunterProfileContent({ hunter, score, photoUrl, onClose }) {
               Are you sure you want to go invisible? It is currently not possible to return to visible mode.
             </p>
 
-            {/* Side-by-side Buttons */}
             <div className="flex items-center justify-center gap-3">
               <button
                 type="button"
@@ -716,10 +756,53 @@ function HunterProfileContent({ hunter, score, photoUrl, onClose }) {
               </button>
               <button
                 type="button"
-                onClick={() => setShowConfirm(false)}
+                onClick={() => updateVisibilityStatus(true)}
                 className="px-4 py-2 text-sm rounded-xl bg-red-600/80 hover:bg-red-600 text-white font-medium transition-colors"
               >
                 Yes, I understand
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Photo Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+          onClick={() => setShowDeleteConfirm(false)}
+        >
+          <div
+            className="relative w-full max-w-sm rounded-2xl bg-[#1e2342] p-6 text-center shadow-xl border border-parchment/10"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setShowDeleteConfirm(false)}
+              className="absolute top-4 right-4 text-parchment/60 hover:text-parchment text-lg leading-none"
+              aria-label="Close modal"
+            >
+              ✕
+            </button>
+
+            <p className="font-body text-base text-parchment mt-2 mb-6">
+              Are you sure you want to delete your photo? It is currently not possible to reupload a photo, so you will be put in invisible mode.
+            </p>
+
+            <div className="flex items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-4 py-2 text-sm rounded-xl border border-parchment/20 text-parchment/80 hover:bg-parchment/10 transition-colors"
+              >
+                No, keep photo
+              </button>
+              <button
+                type="button"
+                onClick={handleDeletePhoto}
+                className="px-4 py-2 text-sm rounded-xl bg-red-600/80 hover:bg-red-600 text-white font-medium transition-colors"
+              >
+                Yes, delete it
               </button>
             </div>
           </div>
@@ -736,7 +819,6 @@ function HunterProfileContent({ hunter, score, photoUrl, onClose }) {
             className="relative flex flex-col items-center max-w-lg w-full bg-[#1e2342] p-4 pt-10 rounded-2xl border border-parchment/10 shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Close Cross Button */}
             <button
               type="button"
               onClick={() => setShowPhotoModal(false)}
@@ -746,7 +828,6 @@ function HunterProfileContent({ hunter, score, photoUrl, onClose }) {
               ✕
             </button>
 
-            {/* Full Image Display */}
             <div className="w-full max-h-[70vh] flex items-center justify-center overflow-hidden rounded-xl">
               <img
                 src={photoUrl}
@@ -755,14 +836,10 @@ function HunterProfileContent({ hunter, score, photoUrl, onClose }) {
               />
             </div>
 
-            {/* Bottom-right action container */}
             <div className="w-full flex justify-end mt-4">
               <button
                 type="button"
-                onClick={() => {
-                  if (onDeletePhoto) onDeletePhoto();
-                  setShowPhotoModal(false);
-                }}
+                onClick={() => setShowDeleteConfirm(true)}
                 className="px-4 py-2 text-sm rounded-xl bg-red-600/80 hover:bg-red-600 text-white font-medium transition-colors"
               >
                 Delete my photo
@@ -771,7 +848,6 @@ function HunterProfileContent({ hunter, score, photoUrl, onClose }) {
           </div>
         </div>
       )}
-
     </div>
   );
 }
@@ -971,10 +1047,11 @@ export default function HunterPage({ convention, hunter, targets }) {
   // Same route used for target photos, called once and reused everywhere
   // this hunter's own photo appears (mission bar avatar + profile modal)
   // instead of resolving a new signed URL per occurrence.
-  const hunterPhotoUrl =
+  const [hunterPhotoUrl, setHunterPhotoUrl] = useState(
     convention?.id && hunter?.app_uid
       ? `/c/${convention.id}/player/${hunter.app_uid}/photo`
-      : null;
+      : null
+  );
 
   const isCooldownActive = timeLeftSeconds > 0;
   const currentInfoTarget = currentTargets.find((t) => t?.app_uid === infoTargetId);
@@ -1090,6 +1167,7 @@ export default function HunterPage({ convention, hunter, targets }) {
             score={score}
             photoUrl={hunterPhotoUrl}
             onClose={() => setProfileOpen(false)}
+            onPhotoDeleted={() => setHunterPhotoUrl(null)}
           />
         </Modal>
       )}
