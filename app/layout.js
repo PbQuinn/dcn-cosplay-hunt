@@ -36,9 +36,8 @@ export default function RootLayout({ children }) {
             <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
               <a href="/" className="flex items-baseline gap-2">
                 <span className="font-display text-xl font-bold tracking-tight">
-                  Cosplay Safari
+                  Cosplay Hunt
                 </span>
-                <span className="eyebrow hidden sm:inline">Field Guide Edition</span>
               </a>
               <nav className="font-mono text-xs uppercase tracking-widest text-parchment/60">
                 <a href="/admin" className="hover:text-flare">Admin</a>
@@ -47,7 +46,7 @@ export default function RootLayout({ children }) {
           </header>
         )}
 
-        <main className={isDisplayPage ? "" : "mx-auto max-w-5xl px-6"}>
+        <main className={isDisplayPage ? "" : "mx-auto max-w-5xl px-6 py-2"}>
           {children}
         </main>
       </body>
