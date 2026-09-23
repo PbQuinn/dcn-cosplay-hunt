@@ -10,7 +10,7 @@ import {
   CircleAlert,
   ChevronRight,
 } from "lucide-react";
-import { NR_TARGETS, approvalStatusLabels } from "@/lib/constants";
+import { NR_TARGETS, approvalStatuses, approvalStatusLabels } from "@/lib/constants";
 import { checkPlayerCode, performCapture, requestNewTargetAssignment, updatePlayerApproval } from "@/app/actions/target";
 
 function initialsFor(name) {
@@ -347,7 +347,12 @@ function BlankTarget({ conventionId, hunterId, onNewTargets, onNoCharFound }) {
 // ---------------------------------------------------------------------------
 // Modal contents
 // ---------------------------------------------------------------------------
-export function TargetInfoContent({ target, onClose, isAdmin = false }) {
+export function TargetInfoContent({
+  target,
+  onClose,
+  isAdmin = false,
+  closeOnAction = false
+}) {
   const [errored, setErrored] = useState(false);
   const [currentApprovedStatus, setCurrentApprovedStatus] = useState(target?.approved);
   const [isUpdating, setIsUpdating] = useState(false);
@@ -438,7 +443,8 @@ export function TargetInfoContent({ target, onClose, isAdmin = false }) {
           <div className="flex items-center justify-center gap-3 pt-2">
             <button
               type="button"
-              onClick={() => updateApprovalStatus(2)}
+              disabled={isUpdating}
+              onClick={() => updateApprovalStatus(approvalStatuses.REJECTED)}
               className="flex-1 cursor-pointer rounded-xl border border-flare/30 bg-flare/10 px-4 py-2.5 font-body text-sm font-semibold text-flare transition-all hover:bg-flare hover:text-ink active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-flare/50"
             >
               Reject
@@ -446,7 +452,8 @@ export function TargetInfoContent({ target, onClose, isAdmin = false }) {
 
             <button
               type="button"
-              onClick={() => updateApprovalStatus(1)}
+              disabled={isUpdating}
+              onClick={() => updateApprovalStatus(approvalStatuses.APPROVED)}
               className="flex-1 cursor-pointer rounded-xl bg-sage px-4 py-2.5 font-body text-sm font-bold text-ink transition-all hover:bg-sage/90 hover:shadow-lg hover:shadow-sage/10 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage/50"
             >
               Approve
