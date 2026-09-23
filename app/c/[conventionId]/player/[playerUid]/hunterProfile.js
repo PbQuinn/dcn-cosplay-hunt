@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import {
   NR_TARGETS, REFRESH_COOLDOWN_MINUTES,
-  REFRESH_COOLDOWN_MILLISECONDS, approvalStatusLabels
+  REFRESH_COOLDOWN_MILLISECONDS, approvalStatusLabels, approvalStatuses
 } from "@/lib/constants";
 import {
   checkPlayerCode, performCapture, requestFreshTargetAssignment,
@@ -873,13 +873,36 @@ export default function HunterPage({ convention, hunter, targets }) {
   };
 
   async function handleCaptureSuccess(conventionId, hunterId, targetId) {
-    const { targets, score, error } = await performCapture(conventionId, hunterId, targetId);
-    if (!error) {
-      setCapturedIds((prev) => new Set(prev).add(targetId));
-      setCurrentTargets(targets);
-      setScore(score);
+  const startTime = performance.now();
+
+  try {
+    // 1. Destructure targets (full DB array) and score
+    const { targets, score, error } = await performCapture(
+      conventionId,
+      hunterId,
+      targetId
+    );
+
+    const duration = (performance.now() - startTime).toFixed(2);
+
+    if (error) {
+      console.error(`[handleCaptureSuccess] performCapture failed (${duration}ms):`, error);
+      return;
     }
+
+    // 2. Mark target as captured in local tracking set
+    setCapturedIds((prev) => new Set(prev).add(targetId));
+
+    // 3. Update score state
+    setScore(score);
+
+    // 4. Overwrite local UI state with exact DB target order
+    setCurrentTargets(targets);
+
+  } catch (err) {
+    console.error("[handleCaptureSuccess] Unexpected exception thrown:", err);
   }
+}
 
   useEffect(() => {
     // Only start a timer if there is remaining cooldown time

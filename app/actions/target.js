@@ -85,7 +85,7 @@ export async function getHunterTargetIds(conventionId, hunterId) {
   })
 }
 // f9e13058-4acb-49fb-b494-869b7f291187 786f2e7b-1a12-4be9-a829-fde41cfbea72
-/* Request a new target */ 
+/* Request a new target */
 export async function requestNewTargetAssignment(conventionId, hunterId) {
 
   let currentTargets = await getHunterTargetIds(conventionId, hunterId);
@@ -100,7 +100,7 @@ export async function requestNewTargetAssignment(conventionId, hunterId) {
 
   const { data, updateError } = await supabase
     .from("players")
-    .update({ "targets": targetListString})
+    .update({ "targets": targetListString })
     .eq("convention_id", conventionId)
     .eq("app_uid", hunterId)
 
@@ -233,41 +233,60 @@ async function incrementScore(conventionId, hunterId, value) {
 /* Given a target and its code, award the player with score and remove the target from the list, returning the updated target list */
 export async function performCapture(conventionId, hunterId, targetId) {
   let currentTargets = await getHunterTargetIds(conventionId, hunterId);
+
+  // Track original position before filtering
+  const originalIndex = currentTargets.indexOf(targetId);
+
   currentTargets = currentTargets.filter((id) => id != targetId);
+
   let currentScore = await getCurrentScore(conventionId, hunterId);
 
   let ret = {
-    targets: currentTargets,
+    targets: [],
     score: currentScore,
     error: undefined
-  }
+  };
 
-  // Log the capture in the table
+  // 1. Log the capture in the table
   const insertError = await insertCapture(conventionId, hunterId, targetId);
-
   if (insertError) {
-    console.error("Something went wrong trying to insert the capture in the table:", insertError)
-    ret.error = insertError
-    return ret
+    console.error("Error inserting capture:", insertError);
+    ret.error = insertError;
+    return ret;
   }
 
-  // Remove the capture from the player's targets
-  const { data, error } = await supabase
+  // 2. Automatically request a replacement target to fill the open slot back up to 5 (NR_TARGETS)
+  let replacementTargetId = undefined;
+  if (currentTargets.length < NR_TARGETS) {
+    const { newTarget, error: newTargetError } = await getNewTarget(conventionId, hunterId, currentTargets);
+    if (newTarget) {
+      replacementTargetId = newTarget;
+      currentTargets.push(newTarget);
+    } else if (newTargetError) {
+      console.warn("Could not assign replacement target:", newTargetError);
+    }
+  }
+
+  // 3. Update Supabase with the new array of target IDs (length 5)
+  const { error: updateError } = await supabase
     .from("players")
     .update({ "targets": stringFromTargetList(currentTargets) })
     .eq("convention_id", conventionId)
     .eq("app_uid", hunterId);
 
-  if (error) {
-    console.error("Something went wrong trying to update the player:", error)
-    ret.error = error
-    return ret
+  if (updateError) {
+    console.error("Error updating player targets in DB:", updateError);
+    ret.error = updateError;
+    return ret;
   }
 
-  ret.targets = await getTargetProfiles(conventionId, hunterId);
+  // 4. Fetch updated profiles (now 5 targets) and increment score
+  const updatedProfiles = await getTargetProfiles(conventionId, hunterId);
   ret.score = await incrementScore(conventionId, hunterId, CAPTURE_REWARD);
+  ret.targets = updatedProfiles; // Full array in DB order
+  ret.replacementTarget = updatedProfiles.find((t) => t?.app_uid === replacementTargetId);
 
-  return ret
+  return ret;
 }
 
 /* Given a hunter, target and a convention, insert a capture pair into the captures table */
