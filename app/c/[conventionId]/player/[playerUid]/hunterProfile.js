@@ -890,36 +890,36 @@ export default function HunterPage({ convention, hunter, targets }) {
   };
 
   async function handleCaptureSuccess(conventionId, hunterId, targetId) {
-  const startTime = performance.now();
+    const startTime = performance.now();
 
-  try {
-    // 1. Destructure targets (full DB array) and score
-    const { targets, score, error } = await performCapture(
-      conventionId,
-      hunterId,
-      targetId
-    );
+    try {
+      // 1. Destructure targets (full DB array) and score
+      const { targets, score, error } = await performCapture(
+        conventionId,
+        hunterId,
+        targetId
+      );
 
-    const duration = (performance.now() - startTime).toFixed(2);
+      const duration = (performance.now() - startTime).toFixed(2);
 
-    if (error) {
-      console.error(`[handleCaptureSuccess] performCapture failed (${duration}ms):`, error);
-      return;
+      if (error) {
+        console.error(`[handleCaptureSuccess] performCapture failed (${duration}ms):`, error);
+        return;
+      }
+
+      // 2. Mark target as captured in local tracking set
+      setCapturedIds((prev) => new Set(prev).add(targetId));
+
+      // 3. Update score state
+      setScore(score);
+
+      // 4. Overwrite local UI state with exact DB target order
+      setCurrentTargets(targets);
+
+    } catch (err) {
+      console.error("[handleCaptureSuccess] Unexpected exception thrown:", err);
     }
-
-    // 2. Mark target as captured in local tracking set
-    setCapturedIds((prev) => new Set(prev).add(targetId));
-
-    // 3. Update score state
-    setScore(score);
-
-    // 4. Overwrite local UI state with exact DB target order
-    setCurrentTargets(targets);
-
-  } catch (err) {
-    console.error("[handleCaptureSuccess] Unexpected exception thrown:", err);
   }
-}
 
   useEffect(() => {
     // Only start a timer if there is remaining cooldown time
@@ -951,25 +951,22 @@ export default function HunterPage({ convention, hunter, targets }) {
       const newTargets = await requestFreshTargetAssignment(conventionId, hunterId);
 
       const nowIso = new Date().toISOString();
+
       try {
         await updatePlayerLastRefresh(hunterId, nowIso);
-      } catch (err) {
-        console.error("%c[API] Post-resolve updatePlayerLastRefresh failed:", "color: #ef4444;", err);
-      }
 
+      } catch (err) {
+        console.error("%c[API] Post-resolve updatePlayerLastRefresh failed:", "color: #ef4444; font-weight: bold;", err);
+        console.error("%c[API] Error context:", "color: #f87171;", { hunterId, nowIso });
+      }
       setCurrentTargets(newTargets);
     } catch (error) {
       console.error("%c[Handler] Error during target refresh:", "color: #ef4444; font-weight: bold;", error);
+      console.error("%c[Handler] Failed with params:", "color: #f87171;", { conventionId, hunterId });
     } finally {
       setIsRefreshing(false);
     }
   }
-
-  const blanksCount = Math.max(0, NR_TARGETS - currentTargets.length);
-  const displayTargets = [
-    ...currentTargets,
-    ...Array.from({ length: blanksCount }, () => undefined),
-  ];
 
   // Same route used for target photos, called once and reused everywhere
   // this hunter's own photo appears (mission bar avatar + profile modal)
@@ -980,7 +977,7 @@ export default function HunterPage({ convention, hunter, targets }) {
       : null;
 
   const isCooldownActive = timeLeftSeconds > 0;
-  const currentInfoTarget = displayTargets.find((t) => t?.app_uid === infoTargetId);
+  const currentInfoTarget = currentTargets.find((t) => t?.app_uid === infoTargetId);
 
   if (!hunter) {
     return (
@@ -1099,7 +1096,7 @@ export default function HunterPage({ convention, hunter, targets }) {
 
       {infoTargetId && (
         <Modal labelledBy="target-info-title" onClose={() => setInfoTargetId(null)}>
-          <TargetInfoContent target={displayTargets.find((t) => t.app_uid === infoTargetId)} onClose={() => setInfoTargetId(null)} />
+          <TargetInfoContent target={currentTargets.find((t) => t?.app_uid === infoTargetId)} onClose={() => setInfoTargetId(null)} />
         </Modal>
       )}
 

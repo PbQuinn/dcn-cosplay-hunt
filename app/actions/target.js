@@ -108,31 +108,30 @@ export async function requestNewTargetAssignment(conventionId, hunterId) {
 }
 
 export async function requestFreshTargetAssignment(conventionId, appUid) {
-  return new Promise(async (resolve) => {
-    const { data, updateError } = await supabase
-      .from("players")
-      .update({ "targets": "" })
-      .eq("convention_id", conventionId)
-      .eq("app_uid", appUid);
+  // 1. Reset target string/array in Supabase
+  const { error: updateError } = await supabase
+    .from("players")
+    .update({ targets: "" })
+    .eq("convention_id", conventionId)
+    .eq("app_uid", appUid);
 
-    if (updateError) {
-      console.error("%c[API] Error resetting player targets in Supabase:", "color: #ef4444;", updateError);
-    }
+  if (updateError) {
+    console.error("%c[API] Error resetting player targets in Supabase:", "color: #ef4444;", updateError);
+  }
 
-    let newTargets = [];
+  // 2. Request new targets concurrently
+  const assignments = await Promise.all(
+    Array.from({ length: NR_TARGETS }, () =>
+      requestNewTargetAssignment(conventionId, appUid)
+    )
+  );
 
-    for (let i = 0; i < NR_TARGETS; i++) {
-      let { newTarget, targets, error } = await requestNewTargetAssignment(conventionId, appUid);
+  // Extract the accumulated targets array from the last call response
+  const lastResult = assignments[assignments.length - 1];
+  const targetPlayers = lastResult?.targets || [];
 
-      if (error) {
-        console.error(`[API] Error on iteration ${i + 1}:`, error);
-      }
-
-      newTargets = targets;
-    }
-
-    resolve(newTargets);
-  });
+  // Return the full player objects directly (no Step 3 query needed!)
+  return targetPlayers; 
 }
 
 /* Returns the player-visible data for the targets of a given hunter */
