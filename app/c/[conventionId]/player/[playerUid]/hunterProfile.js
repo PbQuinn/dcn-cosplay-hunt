@@ -908,11 +908,8 @@ export default function HunterPage({ convention, hunter, targets }) {
       ? `/c/${convention.id}/player/${hunter.app_uid}/photo`
       : null;
 
-<<<<<<< HEAD
   const isCooldownActive = timeLeftSeconds > 0;
-=======
   const currentInfoTarget = displayTargets.find((t) => t?.app_uid === infoTargetId);
->>>>>>> main
 
   if (!hunter) {
     return (
