@@ -11,7 +11,7 @@ import {
   CircleAlert,
   ChevronRight,
 } from "lucide-react";
-import { NR_TARGETS, REFRESH_COOLDOWN_MINUTES, approvalStatusLabels } from "@/lib/constants";
+import { NR_TARGETS, REFRESH_COOLDOWN_MINUTES, approvalStatuses, approvalStatusLabels } from "@/lib/constants";
 import { checkPlayerCode, performCapture, requestFreshTargetAssignment, requestNewTargetAssignment, updatePlayerApproval } from "@/app/actions/target";
 
 function initialsFor(name) {
@@ -199,10 +199,22 @@ function TargetCard({ target, captured, onOpenInfo, onOpenCapture }) {
   const [errored, setErrored] = useState(false);
   const showImage = Boolean(target?.photoUrl) && !errored;
 
+  const handleInfoClick = () => {
+    onOpenInfo(target?.app_uid);
+  };
+
+  const handleImageError = () => {
+    setErrored(true);
+  };
+
+  const handleCaptureClick = () => {
+    onOpenCapture(target);
+  };
+
   return (
     <li className="flex w-[76vw] max-w-[320px] flex-none snap-center flex-col gap-2.5 rounded-2xl border border-parchment/10 bg-ink-light p-2.5">
       <button
-        onClick={() => onOpenInfo(target?.app_uid)}
+        onClick={handleInfoClick}
         aria-label={`View details for ${target?.character}`}
         className="relative block aspect-[4/5] w-full cursor-pointer overflow-hidden rounded-xl bg-ink"
       >
@@ -210,7 +222,7 @@ function TargetCard({ target, captured, onOpenInfo, onOpenCapture }) {
           <img
             src={target?.photoUrl}
             alt={target?.character}
-            onError={() => setErrored(true)}
+            onError={handleImageError}
             className="h-full w-full object-cover"
           />
         ) : (
@@ -245,7 +257,7 @@ function TargetCard({ target, captured, onOpenInfo, onOpenCapture }) {
       </div>
 
       <button
-        onClick={() => { onOpenCapture(target) }}
+        onClick={handleCaptureClick}
         disabled={captured}
         className={
           captured
@@ -336,14 +348,30 @@ function BlankTarget({ conventionId, hunterId, onNewTargets, onNoCharFound }) {
 // ---------------------------------------------------------------------------
 // Modal contents
 // ---------------------------------------------------------------------------
-export function TargetInfoContent({ target, onClose, isAdmin = false }) {
+export function TargetInfoContent({
+  target,
+  onClose,
+  isAdmin = false,
+  closeOnAction = false,
+  captured = false,
+  onOpenCapture
+}) {
   const [errored, setErrored] = useState(false);
   const [currentApprovedStatus, setCurrentApprovedStatus] = useState(target?.approved);
   const [isUpdating, setIsUpdating] = useState(false);
   const showImage = Boolean(target?.photoUrl) && !errored;
 
+  const handleCaptureClick = () => {
+    if (onOpenCapture && target) {
+      onClose(); // Close the info modal
+      onOpenCapture(target); // Open the capture modal
+    }
+  };
+
   const updateApprovalStatus = async (status) => {
-    if (!target?.id) return;
+    if (!target?.id) {
+      return;
+    }
 
     setIsUpdating(true);
     try {
@@ -356,14 +384,21 @@ export function TargetInfoContent({ target, onClose, isAdmin = false }) {
       if (onUpdateTarget && data?.[0]) {
         onUpdateTarget(data[0]);
       }
+
+      if (closeOnAction) {
+        onClose();
+      }
     } catch (err) {
-      console.error("Failed to update status:", err);
+      console.error("%c[TargetInfoContent] Failed to update status:", "color: #ef4444; font-weight: bold;", err);
     } finally {
       setIsUpdating(false);
     }
   };
 
-  if (!target) return null;
+  if (!target) {
+    return null;
+  }
+
 
   return (
     <div className="relative pt-1">
@@ -379,7 +414,7 @@ export function TargetInfoContent({ target, onClose, isAdmin = false }) {
             style={{
               display: "flex",
               width: "auto",
-              height: "120%",
+              height: "100%",
             }}
           />
         ) : (
@@ -427,7 +462,8 @@ export function TargetInfoContent({ target, onClose, isAdmin = false }) {
           <div className="flex items-center justify-center gap-3 pt-2">
             <button
               type="button"
-              onClick={() => updateApprovalStatus(2)}
+              disabled={isUpdating}
+              onClick={() => updateApprovalStatus(approvalStatuses.REJECTED)}
               className="flex-1 cursor-pointer rounded-xl border border-flare/30 bg-flare/10 px-4 py-2.5 font-body text-sm font-semibold text-flare transition-all hover:bg-flare hover:text-ink active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-flare/50"
             >
               Reject
@@ -435,7 +471,8 @@ export function TargetInfoContent({ target, onClose, isAdmin = false }) {
 
             <button
               type="button"
-              onClick={() => updateApprovalStatus(1)}
+              disabled={isUpdating}
+              onClick={() => updateApprovalStatus(approvalStatuses.APPROVED)}
               className="flex-1 cursor-pointer rounded-xl bg-sage px-4 py-2.5 font-body text-sm font-bold text-ink transition-all hover:bg-sage/90 hover:shadow-lg hover:shadow-sage/10 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage/50"
             >
               Approve
@@ -446,10 +483,26 @@ export function TargetInfoContent({ target, onClose, isAdmin = false }) {
         /* ---------------------------------------------------- */
         /* PUBLIC INSTRUCTIONS                                 */
         /* ---------------------------------------------------- */
-        <p className="mt-3 font-body text-sm leading-relaxed text-parchment/80">
-          See if you can spot {target.character || "this cosplayer"}! Once you
-          find them, ask for their 4-digit code to score points!
-        </p>
+        <div className="mt-3 space-y-4">
+          <p className="font-body text-sm leading-relaxed text-parchment/80">
+            See if you can spot {target.character || "this cosplayer"}! Once you
+            find them, ask for their 4-digit code to score points!
+          </p>
+
+          <button
+            onClick={handleCaptureClick}
+            disabled={captured}
+            className={
+              captured
+                ? "flex w-full items-center justify-center gap-2 rounded-xl border border-sage bg-ink py-3 font-body text-[14.5px] font-semibold text-sage"
+                : "flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-flare py-3 font-body text-[14.5px] font-semibold text-ink transition hover:bg-flare-dim active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-flare/50 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-light"
+            }
+          >
+            <Camera size={17} strokeWidth={2.25} />
+            {captured ? "Logged" : "Capture"}
+          </button>
+        </div>
+
       )}
     </div>
   );
@@ -493,7 +546,9 @@ function CaptureContent({ conventionId, hunter, target, onClose, onSuccess }) {
     if (correct) {
       setStatus("success");
       onSuccess(conventionId, hunter.app_uid, target.app_uid);
-      setTimeout(onClose, 900);
+      setTimeout(() => {
+        onClose();
+      }, 900);
     } else {
       setStatus("error");
     }
@@ -501,7 +556,9 @@ function CaptureContent({ conventionId, hunter, target, onClose, onSuccess }) {
 
   return (
     <div className="relative pt-1">
-      <ModalCloseButton onClose={onClose} />
+      <ModalCloseButton onClose={() => {
+        onClose();
+      }} />
       <Eyebrow>Log a capture</Eyebrow>
       <h2 id="capture-title" className="mb-2 mt-0.5 font-display text-3xl text-parchment">
         {target.character}
@@ -786,9 +843,11 @@ export default function HunterPage({ convention, hunter, targets }) {
       ? `/c/${convention.id}/player/${hunter.app_uid}/photo`
       : null;
 
+  const currentInfoTarget = displayTargets.find((t) => t?.app_uid === infoTargetId);
+
   if (!hunter) {
     return (
-      <div className="bg-grain flex min-h-screen items-center justify-center bg-ink bg-repeat px-10 text-center">
+      <div className="bg-grain flex items-center justify-center bg-ink bg-repeat px-10 text-center">
         <p className="font-body text-parchment/60">
           No hunter profile found for this device. Check in at the
           registration desk to get your badge and target list.
@@ -806,24 +865,21 @@ export default function HunterPage({ convention, hunter, targets }) {
         onOpenProfile={() => setProfileOpen(true)}
       />
 
-      <main className="pb-10 pt-4.5">
-        <p className="mb-3.5 px-4 font-mono text-[11px] uppercase tracking-wide text-parchment/50">
-          {convention?.name ? `${convention.name}` : "Convention Info Unavailable"}
-        </p>
-
+      <main className="pb-1 pt-4.5">
         <ul
           role="list"
           className="m-0 flex snap-x snap-mandatory gap-3.5 overflow-x-auto px-4 pb-2.5 pt-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {displayTargets.map((target, i) => {
-            return target ?
+            return target ? (
               <TargetCard
                 key={`${target.app_uid}-${i}`}
                 target={target}
                 captured={capturedIds.has(target.app_uid)}
                 onOpenInfo={setInfoTargetId}
                 onOpenCapture={setCaptureTarget}
-              /> :
+              />
+            ) : (
               <BlankTarget
                 key={`blank-${i}`}
                 conventionId={convention?.id}
@@ -831,6 +887,7 @@ export default function HunterPage({ convention, hunter, targets }) {
                 onNewTargets={setCurrentTargets}
                 onNoCharFound={setShowNoCharFoundModal}
               />
+            );
           })}
         </ul>
         <button
@@ -846,21 +903,33 @@ export default function HunterPage({ convention, hunter, targets }) {
         </button>
       </main>
 
-      {infoTargetId && (
-
-        <Modal labelledBy="target-info-title" onClose={() => setInfoTargetId(null)}>
-          <TargetInfoContent target={displayTargets.find((t) => t.app_uid === infoTargetId)} onClose={() => setInfoTargetId(null)} />
+      {infoTargetId && currentInfoTarget && (
+        <Modal
+          labelledBy="target-info-title"
+          onClose={() => setInfoTargetId(null)}
+        >
+          <TargetInfoContent
+            target={currentInfoTarget}
+            captured={capturedIds.has(currentInfoTarget.app_uid)}
+            onOpenCapture={setCaptureTarget}
+            onClose={() => setInfoTargetId(null)}
+          />
         </Modal>
       )}
 
       {captureTarget && (
-        <Modal labelledBy="capture-title" onClose={() => setCaptureTarget(null)}>
+        <Modal
+          labelledBy="capture-title"
+          onClose={() => setCaptureTarget(null)}
+        >
           <CaptureContent
             conventionId={convention.id}
             hunter={hunter}
             target={captureTarget}
             onClose={() => setCaptureTarget(null)}
-            onSuccess={handleCaptureSuccess}
+            onSuccess={(...args) => {
+              handleCaptureSuccess(...args);
+            }}
           />
         </Modal>
       )}

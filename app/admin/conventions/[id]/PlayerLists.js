@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Modal, TargetInfoContent } from "@/app/c/[conventionId]/player/[playerUid]/hunterProfile";
+import { approvalStatusLabels } from "@/lib/constants";
 
 function formatDate(dateString) {
   if (!dateString) return "";
@@ -35,9 +36,21 @@ export function SubmissionList({ submissions }) {
     return <p className="text-sm text-parchment/50">No cosplay entries logged yet.</p>;
   }
 
+ const getStatusBadgeClass = (status) => {
+  switch (status) {
+    case "APPROVED":
+      return "bg-sage/20 text-sage border-sage/40";
+    case "REJECTED":
+      return "bg-flare/20 text-flare border-flare/40";
+    case "PENDING":
+    default:
+      return "bg-amber-500/15 text-amber-300 border-amber-500/30";
+  }
+};
+
   return (
     <>
-      <ul className="card-shell max-h-96 space-y-2 overflow-y-auto">
+      <ul className="card-shell max-h-96 space-y-2 overflow-y-auto bg-parchment/5">
         {submissions.map((s) => (
           <li
             key={s.id}
@@ -49,7 +62,14 @@ export function SubmissionList({ submissions }) {
               <span className="text-parchment/60">
                 {!s.invisible ? ` as ${s.character}` : " (Invisible)"}
               </span>{" "}
-              <span className="text-parchment/60">[score: {s.score}]</span>
+              <span className="text-parchment/60">[score: {s.score}]</span>{" "}
+              <span
+                className={`inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium ${getStatusBadgeClass(
+                  approvalStatusLabels[s.approved]
+                )}`}
+              >
+                {approvalStatusLabels[s.approved] || s.approved || "Pending"}
+              </span>
             </span>
             <span className="font-mono text-[10px] text-parchment/30">
               Created at {formatDate(s.created_at)}
@@ -81,7 +101,7 @@ export function ApprovalList({ submissions }) {
 
   return (
     <>
-      <ul className="card-shell max-h-96 space-y-2 overflow-y-auto">
+      <ul className="card-shell max-h-96 space-y-2 overflow-y-auto bg-parchment/5">
         {submissions.map((s) => (
           <li
             key={s.id}
@@ -108,6 +128,7 @@ export function ApprovalList({ submissions }) {
             target={selectedTarget}
             onClose={() => setSelectedTarget(null)}
             isAdmin={true}
+            closeOnAction={true}
           />
         </Modal>
       )}

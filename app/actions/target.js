@@ -4,9 +4,21 @@ import { approvalStatuses, CAPTURE_REWARD, NR_TARGETS } from "@/lib/constants";
 import { supabase } from "@/lib/supabaseServer";
 import { stringFromTargetList, targetListFromString } from "@/lib/targetList";
 
-export async function updatePlayerApproval(target, status) {
-console.log(`Updating approval status for targetId: ${target.id} to status: ${status}`);
+// Load capture data
+export async function loadCaptures(conventionId) {
+  const { data: captures, error } = await supabase
+    .from("captures")
+    .select("*")
+    .eq("convention_id", conventionId);
 
+  if (error) {
+    console.error("Supabase Query Error:", error);
+  }
+
+  return captures;
+}
+
+export async function updatePlayerApproval(target, status) {
   const { data, error } = await supabase
     .from("players")
     .update({ approved: status })
@@ -31,7 +43,7 @@ export async function getNewTarget(conventionId, hunterId, currentTargets) {
   }
 
   const forbiddenTargets = currentTargets.concat(captures.targets)
-  
+
   /* Select all hunters not equal to the requesting hunter */
   const { data: candidateTargetIds, findError } = await supabase
     .from("players")
@@ -175,19 +187,21 @@ export async function checkPlayerCode(conventionId, targetId, code) {
     .eq("convention_id", conventionId)
     .eq("app_uid", targetId)
     .eq("code", code);
-  // If there is a match, that means the code entered was correct (conventionId/targetAppUid pairs are unique)
-  return matches?.length > 0
+
+  const isValid = matches?.length > 0;
+
+  return isValid;
 }
 
 async function getCurrentScore(conventionId, hunterId) {
   return new Promise(async (resolve) => {
-      const { data } = await supabase
+    const { data } = await supabase
       .from("players")
       .select("score")
       .eq("convention_id", conventionId)
       .eq("app_uid", hunterId)
       .single();
-      resolve(data?.score)
+    resolve(data?.score)
   })
 }
 
@@ -239,8 +253,8 @@ export async function performCapture(conventionId, hunterId, targetId) {
     return ret
   }
 
-    ret.targets = await getTargetProfiles(conventionId, hunterId);
-    ret.score = await incrementScore(conventionId, hunterId, CAPTURE_REWARD);
+  ret.targets = await getTargetProfiles(conventionId, hunterId);
+  ret.score = await incrementScore(conventionId, hunterId, CAPTURE_REWARD);
 
   return ret
 }
@@ -269,6 +283,6 @@ async function getHunterCaptureIds(conventionId, hunterId) {
       .select("target_id")
       .eq("convention_id", conventionId)
       .eq("hunter_id", hunterId)
-    resolve({ targets: captures?.map( (target) => target.target_id), error: error })
+    resolve({ targets: captures?.map((target) => target.target_id), error: error })
   })
 }

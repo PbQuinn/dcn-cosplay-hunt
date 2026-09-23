@@ -14,7 +14,7 @@ export default function LeaderBoard({ leaderBoard = [], displayAmount }) {
   });
 
   return (
-    <ul className="card-shell max-h-96 space-y-2 overflow-y-auto">
+    <ul className="card-shell max-h-96 space-y-2 overflow-y-auto bg-parchment/5">
       {rows.map((entry, index) => {
         const rank = index + 1;
 
