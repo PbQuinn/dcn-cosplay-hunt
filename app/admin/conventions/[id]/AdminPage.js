@@ -63,9 +63,9 @@ export default function AdminDashboard({ convention }) {
       <h1 className="mb-8 text-4xl font-bold">{convention.name}</h1>
 
       <div className="mb-6 flex gap-2 border-b border-parchment/10 pb-4">
-        {tabs.map((t) => (
+        {tabs.map((t, i) => (
           <button
-            key={t.id}
+            key={`${t.id}-${i}`}
             onClick={() => setTab(t.id)}
             className={`font-mono text-xs uppercase tracking-wide ${tab === t.id ? "text-flare" : "text-parchment/50 hover:text-parchment"
               }`}
