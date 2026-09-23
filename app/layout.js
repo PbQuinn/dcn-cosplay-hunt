@@ -36,7 +36,7 @@ export default function RootLayout({ children }) {
             <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-5">
               <a href="/" className="flex items-baseline gap-2">
                 <span className="font-display text-xl font-bold tracking-tight">
-                  Cosplay Hunt
+                  Cosplay Hunt!
                 </span>
               </a>
               <nav className="font-mono text-xs uppercase tracking-widest text-parchment/60">

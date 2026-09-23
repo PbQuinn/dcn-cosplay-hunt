@@ -121,7 +121,7 @@ export default function CosplayHunt({ convention, hunter }) {
           </p>}
 
           <h1 className="font-display text-6xl font-bold tracking-tight sm:text-8xl">
-            Cosplay Hunt
+            Cosplay Hunt!
           </h1>
 
           <p className="mx-auto mt-6 max-w-2xl text-lg text-parchment/70 sm:text-xl">
