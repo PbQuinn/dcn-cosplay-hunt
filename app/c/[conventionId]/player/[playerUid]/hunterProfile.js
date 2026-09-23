@@ -11,8 +11,15 @@ import {
   CircleAlert,
   ChevronRight,
 } from "lucide-react";
-import { NR_TARGETS, REFRESH_COOLDOWN_MINUTES, approvalStatusLabels } from "@/lib/constants";
-import { checkPlayerCode, performCapture, requestFreshTargetAssignment, requestNewTargetAssignment, updatePlayerApproval } from "@/app/actions/target";
+import {
+  NR_TARGETS, REFRESH_COOLDOWN_MINUTES,
+  REFRESH_COOLDOWN_MILLISECONDS, approvalStatusLabels
+} from "@/lib/constants";
+import {
+  checkPlayerCode, performCapture, requestFreshTargetAssignment,
+  requestNewTargetAssignment, updatePlayerApproval
+} from "@/app/actions/target";
+import { updatePlayerLastRefresh } from "@/app/actions/player";
 
 function initialsFor(name) {
   if (!name) return "??";
@@ -756,6 +763,53 @@ export default function HunterPage({ convention, hunter, targets }) {
   const [showNoCharFoundModal, setShowNoCharFoundModal] = useState(false);
   const [refreshAll, setRefreshAll] = useState(null);
 
+  // Track the last refresh timestamp locally so UI updates immediately
+  const [lastRefreshTime, setLastRefreshTime] = useState(
+    hunter?.last_refresh ? new Date(hunter.last_refresh).getTime() : null
+  );
+
+  // Track remaining seconds for cooldown countdown
+  const [timeLeftSeconds, setTimeLeftSeconds] = useState(0);
+
+  // Sync state if hunter prop updates externally
+  useEffect(() => {
+    if (hunter?.last_refresh) {
+      setLastRefreshTime(new Date(hunter.last_refresh).getTime());
+    }
+  }, [hunter?.last_refresh]);
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (!lastRefreshTime) {
+      setTimeLeftSeconds(0);
+      return;
+    }
+
+    const calculateTimeLeft = () => {
+      const now = Date.now();
+      const nextAvailableTime = lastRefreshTime + REFRESH_COOLDOWN_MILLISECONDS;
+      const diffMs = nextAvailableTime - now;
+
+      if (diffMs <= 0) {
+        setTimeLeftSeconds(0);
+      } else {
+        setTimeLeftSeconds(Math.ceil(diffMs / 1000));
+      }
+    };
+
+    calculateTimeLeft(); // Run immediately
+    const interval = setInterval(calculateTimeLeft, 1000);
+
+    return () => clearInterval(interval);
+  }, [lastRefreshTime]);
+
+  // Helper to format remaining seconds as MM:SS
+  const formatCountdown = (totalSeconds) => {
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  };
+
   async function handleCaptureSuccess(conventionId, hunterId, targetId) {
     const { targets, score, error } = await performCapture(conventionId, hunterId, targetId);
     if (!error) {
@@ -790,6 +844,8 @@ export default function HunterPage({ convention, hunter, targets }) {
     convention?.id && hunter?.app_uid
       ? `/c/${convention.id}/player/${hunter.app_uid}/photo`
       : null;
+
+  const isCooldownActive = timeLeftSeconds > 0;
 
   if (!hunter) {
     return (
@@ -838,16 +894,21 @@ export default function HunterPage({ convention, hunter, targets }) {
               />
           })}
         </ul>
+
         <button
-          onClick={() => { setRefreshAll(true) }
-          }
-          disabled={false}
-          className={
-            "flex w-[70%] mx-auto items-center justify-center gap-3 rounded-xl border border-subtle bg-ink py-3 font-body text-[14.5px] font-semibold text-subtle"
-          }
+          onClick={() => {
+            if (!isCooldownActive) {
+              setRefreshAll(true);
+            }
+          }}
+          disabled={isCooldownActive}
+          className={`flex w-[70%] mx-auto items-center justify-center gap-3 rounded-xl border py-3 font-body text-[14.5px] font-semibold transition-all ${isCooldownActive
+            ? "border-subtle/30 bg-ink/50 text-parchment/40 cursor-not-allowed opacity-60"
+            : "border-subtle bg-ink text-subtle hover:bg-subtle/10 cursor-pointer"
+            }`}
         >
-          <RefreshCcw size={17} strokeWidth={2.25} />
-          {"Request new targets"}
+          <RefreshCcw size={17} strokeWidth={2.25} className={isCooldownActive ? "opacity-40" : ""} />
+          {isCooldownActive ? formatCountdown(timeLeftSeconds) : "Request new targets"}
         </button>
       </main>
 
