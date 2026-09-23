@@ -351,15 +351,26 @@ export function TargetInfoContent({
   target,
   onClose,
   isAdmin = false,
-  closeOnAction = false
+  closeOnAction = false,
+  captured = false,
+  onOpenCapture
 }) {
   const [errored, setErrored] = useState(false);
   const [currentApprovedStatus, setCurrentApprovedStatus] = useState(target?.approved);
   const [isUpdating, setIsUpdating] = useState(false);
   const showImage = Boolean(target?.photoUrl) && !errored;
 
+  const handleCaptureClick = () => {
+    if (onOpenCapture && target) {
+      onClose(); // Close the info modal
+      onOpenCapture(target); // Open the capture modal
+    }
+  };
+
   const updateApprovalStatus = async (status) => {
-    if (!target?.id) return;
+    if (!target?.id) {
+      return;
+    }
 
     setIsUpdating(true);
     try {
@@ -372,14 +383,21 @@ export function TargetInfoContent({
       if (onUpdateTarget && data?.[0]) {
         onUpdateTarget(data[0]);
       }
+
+      if (closeOnAction) {
+        onClose();
+      }
     } catch (err) {
-      console.error("Failed to update status:", err);
+      console.error("%c[TargetInfoContent] Failed to update status:", "color: #ef4444; font-weight: bold;", err);
     } finally {
       setIsUpdating(false);
     }
   };
 
-  if (!target) return null;
+  if (!target) {
+    return null;
+  }
+
 
   return (
     <div className="relative pt-1">
@@ -395,7 +413,7 @@ export function TargetInfoContent({
             style={{
               display: "flex",
               width: "auto",
-              height: "120%",
+              height: "100%",
             }}
           />
         ) : (
@@ -464,10 +482,26 @@ export function TargetInfoContent({
         /* ---------------------------------------------------- */
         /* PUBLIC INSTRUCTIONS                                 */
         /* ---------------------------------------------------- */
-        <p className="mt-3 font-body text-sm leading-relaxed text-parchment/80">
-          See if you can spot {target.character || "this cosplayer"}! Once you
-          find them, ask for their 4-digit code to score points!
-        </p>
+        <div className="mt-3 space-y-4">
+          <p className="font-body text-sm leading-relaxed text-parchment/80">
+            See if you can spot {target.character || "this cosplayer"}! Once you
+            find them, ask for their 4-digit code to score points!
+          </p>
+
+          <button
+            onClick={handleCaptureClick}
+            disabled={captured}
+            className={
+              captured
+                ? "flex w-full items-center justify-center gap-2 rounded-xl border border-sage bg-ink py-3 font-body text-[14.5px] font-semibold text-sage"
+                : "flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-flare py-3 font-body text-[14.5px] font-semibold text-ink transition hover:bg-flare-dim active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-flare/50 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-light"
+            }
+          >
+            <Camera size={17} strokeWidth={2.25} />
+            {captured ? "Logged" : "Capture"}
+          </button>
+        </div>
+
       )}
     </div>
   );
@@ -793,6 +827,8 @@ export default function HunterPage({ convention, hunter, targets }) {
       ? `/c/${convention.id}/player/${hunter.app_uid}/photo`
       : null;
 
+  const currentInfoTarget = displayTargets.find((t) => t?.app_uid === infoTargetId);
+
   if (!hunter) {
     return (
       <div className="bg-grain flex items-center justify-center bg-ink bg-repeat px-10 text-center">
@@ -819,14 +855,15 @@ export default function HunterPage({ convention, hunter, targets }) {
           className="m-0 flex snap-x snap-mandatory gap-3.5 overflow-x-auto px-4 pb-2.5 pt-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {displayTargets.map((target, i) => {
-            return target ?
+            return target ? (
               <TargetCard
                 key={`${target.app_uid}-${i}`}
                 target={target}
                 captured={capturedIds.has(target.app_uid)}
                 onOpenInfo={setInfoTargetId}
                 onOpenCapture={setCaptureTarget}
-              /> :
+              />
+            ) : (
               <BlankTarget
                 key={`blank-${i}`}
                 conventionId={convention?.id}
@@ -834,28 +871,35 @@ export default function HunterPage({ convention, hunter, targets }) {
                 onNewTargets={setCurrentTargets}
                 onNoCharFound={setShowNoCharFoundModal}
               />
+            );
           })}
         </ul>
       </main>
 
-      {infoTargetId && (
-
-        <Modal labelledBy="target-info-title" onClose={() => setInfoTargetId(null)}>
-          <TargetInfoContent target={displayTargets.find((t) => t.app_uid === infoTargetId)} onClose={() => setInfoTargetId(null)} />
+      {infoTargetId && currentInfoTarget && (
+        <Modal
+          labelledBy="target-info-title"
+          onClose={() => setInfoTargetId(null)}
+        >
+          <TargetInfoContent
+            target={currentInfoTarget}
+            captured={capturedIds.has(currentInfoTarget.app_uid)}
+            onOpenCapture={setCaptureTarget}
+            onClose={() => setInfoTargetId(null)}
+          />
         </Modal>
       )}
 
       {captureTarget && (
-        <Modal labelledBy="capture-title" onClose={() => {
-          setCaptureTarget(null);
-        }}>
+        <Modal
+          labelledBy="capture-title"
+          onClose={() => setCaptureTarget(null)}
+        >
           <CaptureContent
             conventionId={convention.id}
             hunter={hunter}
             target={captureTarget}
-            onClose={() => {
-              setCaptureTarget(null);
-            }}
+            onClose={() => setCaptureTarget(null)}
             onSuccess={(...args) => {
               handleCaptureSuccess(...args);
             }}
@@ -871,13 +915,6 @@ export default function HunterPage({ convention, hunter, targets }) {
             photoUrl={hunterPhotoUrl}
             onClose={() => setProfileOpen(false)}
           />
-        </Modal>
-      )}
-
-      {infoTargetId && (
-
-        <Modal labelledBy="target-info-title" onClose={() => setInfoTargetId(null)}>
-          <TargetInfoContent target={displayTargets.find((t) => t.app_uid === infoTargetId)} onClose={() => setInfoTargetId(null)} />
         </Modal>
       )}
 
