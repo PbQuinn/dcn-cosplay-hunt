@@ -818,6 +818,7 @@ export default function HunterPage({ convention, hunter, targets }) {
   const [currentTargets, setCurrentTargets] = useState(targets);
   const [showNoCharFoundModal, setShowNoCharFoundModal] = useState(false);
   const [refreshAll, setRefreshAll] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Track the last refresh timestamp locally so UI updates immediately
   const [lastRefreshTime, setLastRefreshTime] = useState(
@@ -899,6 +900,7 @@ export default function HunterPage({ convention, hunter, targets }) {
   }, [timeLeftSeconds]);
 
   async function handleTargetRefresh(conventionId, hunterId) {
+    setIsRefreshing(true);
     setRefreshAll(null);
     setCurrentTargets([]);
 
@@ -918,6 +920,8 @@ export default function HunterPage({ convention, hunter, targets }) {
       setCurrentTargets(newTargets);
     } catch (error) {
       console.error("%c[Handler] Error during target refresh:", "color: #ef4444; font-weight: bold;", error);
+    } finally {
+      setIsRefreshing(false);
     }
   }
 
@@ -963,25 +967,34 @@ export default function HunterPage({ convention, hunter, targets }) {
           role="list"
           className="m-0 flex snap-x snap-mandatory gap-3.5 overflow-x-auto px-4 pb-2.5 pt-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          {displayTargets.map((target, i) => {
-            return target ? (
-              <TargetCard
-                key={`${target.app_uid}-${i}`}
-                target={target}
-                captured={capturedIds.has(target.app_uid)}
-                onOpenInfo={setInfoTargetId}
-                onOpenCapture={setCaptureTarget}
-              />
-            ) : (
-              <BlankTarget
-                key={`blank-${i}`}
-                conventionId={convention?.id}
-                hunterId={hunter?.app_uid}
-                onNewTargets={setCurrentTargets}
-                onNoCharFound={setShowNoCharFoundModal}
-              />
-            );
-          })}
+          {isRefreshing ? (
+            <div className="w-full flex flex-col items-center justify-center p-8 space-y-3 min-h-[200px]">
+              {/* Loading Spinner */}
+              <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
+              {/* Status Label */}
+              <p className="text-sm font-medium text-gray-600">Waiting for new targets...</p>
+            </div>
+          ) : (
+            displayTargets.map((target, i) => {
+              return target ? (
+                <TargetCard
+                  key={`${target.app_uid}-${i}`}
+                  target={target}
+                  captured={capturedIds.has(target.app_uid)}
+                  onOpenInfo={setInfoTargetId}
+                  onOpenCapture={setCaptureTarget}
+                />
+              ) : (
+                <BlankTarget
+                  key={`blank-${i}`}
+                  conventionId={convention?.id}
+                  hunterId={hunter?.app_uid}
+                  onNewTargets={setCurrentTargets}
+                  onNoCharFound={setShowNoCharFoundModal}
+                />
+              );
+            })
+          )}
         </ul>
 
         <button
@@ -1043,9 +1056,19 @@ export default function HunterPage({ convention, hunter, targets }) {
         </Modal>
       )}
 
-      {infoTargetId && (
-        <Modal labelledBy="target-info-title" onClose={() => setInfoTargetId(null)}>
-          <TargetInfoContent target={displayTargets.find((t) => t.app_uid === infoTargetId)} onClose={() => setInfoTargetId(null)} />
+      {!infoTargetId && (
+        <Modal
+          labelledBy="target-info-title"
+          onClose={() => {
+            setInfoTargetId(null);
+          }}
+        >
+          <TargetInfoContent
+            target={targetForModal}
+            onClose={() => {
+              setInfoTargetId(null);
+            }}
+          />
         </Modal>
       )}
 
