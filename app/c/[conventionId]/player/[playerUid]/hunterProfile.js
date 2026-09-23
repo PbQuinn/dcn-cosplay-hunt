@@ -20,6 +20,7 @@ import {
   requestNewTargetAssignment, updatePlayerApproval
 } from "@/app/actions/target";
 import { updatePlayerLastRefresh } from "@/app/actions/player";
+import { Plus, Loader2 } from "lucide-react";
 
 function initialsFor(name) {
   if (!name) return "??";
@@ -279,24 +280,25 @@ function TargetCard({ target, captured, onOpenInfo, onOpenCapture }) {
   );
 }
 
-
-function BlankTarget({ conventionId, hunterId, onNewTargets, onNoCharFound }) {
-
+function RequestNewTargetCard({ conventionId, hunterId, onNewTargets, onNoCharFound }) {
   const [status, setStatus] = useState("idle"); // idle | loading | error
+
   async function requestNewTarget() {
     setStatus("loading");
     try {
-      const { newTarget, targets, error } = await requestNewTargetAssignment(conventionId, hunterId);
+      const { newTarget, targets, error } = await requestNewTargetAssignment(
+        conventionId,
+        hunterId
+      );
+
       if (newTarget) {
         onNewTargets(targets);
       } else {
         if (error) {
           setStatus("error");
         } else {
-          setStatus("idle");
           onNoCharFound(true);
         }
-
       }
     } catch (e) {
       setStatus("error");
@@ -305,48 +307,63 @@ function BlankTarget({ conventionId, hunterId, onNewTargets, onNoCharFound }) {
     }
   }
 
-  const [errored, setErrored] = useState(false);
+  const isLoading = status === "loading";
 
   return (
-    <li className="flex w-[76vw] max-w-[320px] flex-none snap-center flex-col gap-2.5 rounded-2xl border border-parchment/10 bg-ink-light p-2.5">
+    <li className="flex w-[76vw] max-w-[320px] flex-none snap-center flex-col justify-between rounded-2xl border border-dashed border-parchment/20 bg-ink-light/40 p-2.5 transition hover:border-parchment/40">
       <button
-        aria-label={`Request new`}
-        className="relative block aspect-[4/5] w-full cursor-pointer overflow-hidden rounded-xl bg-ink"
+        type="button"
+        onClick={requestNewTarget}
+        disabled={isLoading}
+        aria-label="Request new target"
+        className="group relative flex aspect-[4/5] w-full cursor-pointer flex-col items-center justify-center rounded-xl border border-parchment/10 bg-ink/60 transition-all hover:bg-ink hover:border-flare/40 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
       >
-        <div className="flex h-full w-full items-center justify-center font-mono text-sm text-parchment/50">
-          ??
+        {/* Frame Corners */}
+        <span className="absolute left-2.5 top-2.5 h-5 w-5 rounded-tl-sm border-l-2 border-t-2 border-parchment/40 transition-colors group-hover:border-flare" />
+        <span className="absolute right-2.5 top-2.5 h-5 w-5 rounded-tr-sm border-r-2 border-t-2 border-parchment/40 transition-colors group-hover:border-flare" />
+        <span className="absolute bottom-2.5 left-2.5 h-5 w-5 rounded-bl-sm border-b-2 border-l-2 border-parchment/40 transition-colors group-hover:border-flare" />
+        <span className="absolute bottom-2.5 right-2.5 h-5 w-5 rounded-br-sm border-b-2 border-r-2 border-parchment/40 transition-colors group-hover:border-flare" />
+
+        {/* Plus Button Icon / Spinner */}
+        <div className="flex h-14 w-14 items-center justify-center rounded-full border border-parchment/20 bg-ink-light text-parchment transition-all group-hover:scale-105 group-hover:border-flare group-hover:bg-flare group-hover:text-ink">
+          {isLoading ? (
+            <Loader2 className="h-7 w-7 animate-spin" />
+          ) : (
+            <Plus className="h-7 w-7" strokeWidth={2.5} />
+          )}
         </div>
 
-
-        <span className="absolute left-2.5 top-2.5 h-5 w-5 rounded-tl-sm border-l-2 border-t-2 border-parchment/85" />
-        <span className="absolute right-2.5 top-2.5 h-5 w-5 rounded-tr-sm border-r-2 border-t-2 border-parchment/85" />
-        <span className="absolute bottom-2.5 left-2.5 h-5 w-5 rounded-bl-sm border-b-2 border-l-2 border-parchment/85" />
-        <span className="absolute bottom-2.5 right-2.5 h-5 w-5 rounded-br-sm border-b-2 border-r-2 border-parchment/85" />
-        <span className="motion-safe:animate-scan pointer-events-none absolute inset-x-0 -top-[40%] h-[40%] bg-gradient-to-b from-transparent via-sage/20 to-transparent" />
-
-        <span className="absolute inset-x-2.5 bottom-2.5 w-fit rounded-lg bg-ink/60 px-2 py-1 font-mono text-[10.5px] uppercase tracking-wide text-parchment">
-          {"Unknown series"}
+        <span className="mt-4 font-mono text-xs uppercase tracking-wider text-parchment/60 group-hover:text-parchment">
+          {isLoading ? "Fetching target..." : "Request new target"}
         </span>
       </button>
 
-      <div>
-        <h3 className="font-display text-2xl leading-none tracking-wide text-parchment">
-          {"Unidentified cosplayer"}
+      <div className="px-1 py-2 text-center">
+        <h3 className="font-display text-xl leading-none tracking-wide text-parchment">
+          Request new target
         </h3>
-        <p className="mt-1 font-body text-sm text-parchment/60">
-          {"Identity unconfirmed"}
+        <p className="mt-1 font-body text-xs text-parchment/60">
+          Get assigned an additional cosplayer target
         </p>
       </div>
 
       <button
+        type="button"
         onClick={requestNewTarget}
-        disabled={status === "loading"}
-        className={
-          "flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-flare py-3 font-body text-[14.5px] font-semibold text-ink transition hover:bg-flare-dim active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-flare/50 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-light"
-        }
+        disabled={isLoading}
+        className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-flare py-3 font-body text-[14.5px] font-semibold text-ink transition hover:bg-flare-dim active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-flare/50 disabled:opacity-50"
       >
-        <Search size={17} strokeWidth={2.25} />
-        {status === "loading" ? "Requesting…" : "Request new"}
+        {isLoading ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Requesting…
+          </>
+        ) : (
+          <>
+            <Plus size={17} strokeWidth={2.25} />
+            Request new target
+          </>
+        )}
       </button>
     </li>
   );
@@ -992,14 +1009,13 @@ export default function HunterPage({ convention, hunter, targets }) {
         >
           {isRefreshing ? (
             <div className="w-full flex flex-col items-center justify-center p-8 space-y-3 min-h-[200px]">
-              {/* Loading Spinner */}
               <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
-              {/* Status Label */}
               <p className="text-sm font-medium text-gray-600">Waiting for new targets...</p>
             </div>
           ) : (
-            displayTargets.map((target, i) => {
-              return target ? (
+            <>
+              {/* Render assigned target cards */}
+              {currentTargets.map((target, i) => (
                 <TargetCard
                   key={`${target.app_uid}-${i}`}
                   target={target}
@@ -1007,16 +1023,18 @@ export default function HunterPage({ convention, hunter, targets }) {
                   onOpenInfo={setInfoTargetId}
                   onOpenCapture={setCaptureTarget}
                 />
-              ) : (
-                <BlankTarget
-                  key={`blank-${i}`}
+              ))}
+
+              {/* Render a single Request New Target card if under max targets limit */}
+              {currentTargets.length < NR_TARGETS && (
+                <RequestNewTargetCard
                   conventionId={convention?.id}
                   hunterId={hunter?.app_uid}
                   onNewTargets={setCurrentTargets}
                   onNoCharFound={setShowNoCharFoundModal}
                 />
-              );
-            })
+              )}
+            </>
           )}
         </ul>
 
