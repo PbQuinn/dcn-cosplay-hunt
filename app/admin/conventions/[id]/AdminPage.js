@@ -7,13 +7,14 @@ import { useAdminSession } from "@/lib/useAdminSession";
 import { usePolling } from "@/lib/usePolling";
 import { SubmissionList, ApprovalList } from "./PlayerLists";
 import LeaderBoard from "./LeaderBoard";
-import { approvalStatuses } from "@/lib/constants";
+import { getConventionPlayerLists } from "@/app/actions/convention";
 
 export default function AdminDashboard({ convention }) {
 
     console.log(convention)
+  const conventionId = convention.id;
   const { session, loading } = useAdminSession();
-//   const [convention, setConvention] = useState(null);
+  const [storedConvention, setConvention] = useState(null);
   const [leaderBoard, setLeaderBoard] = useState([]);
   const [submissions, setSubmissions] = useState([]);
   const [approval, setApproval] = useState([]);
@@ -21,16 +22,10 @@ export default function AdminDashboard({ convention }) {
 
   const loadAll = useCallback(async () => {
     // Prevent fetching if session/conventionId aren't ready
-    if (!session || !convention) return;
 
-    const [{ data: conv }, { data: leaderboard }, { data: subs }, { data: apps }] = await Promise.all([
-      supabase.from("conventions").select("*").eq("id", conventionId).single(),
-      supabase.from("players").select("*").eq("convention_id", conventionId).eq("approved", approvalStatuses.APPROVED).order("score", { ascending: false }),
-      supabase.from("players").select("*").eq("convention_id", conventionId).order("created_at", { ascending: false }),
-      supabase.from("players").select("*").eq("convention_id", conventionId).eq("approved", approvalStatuses.PENDING).order("created_at", { ascending: false }),
-    ]);
+    const [{ data: leaderboard }, { data: subs }, { data: apps }] = await getConventionPlayerLists(convention.id)
 
-    setConvention(conv ?? null);
+    setConvention(convention ?? null);
     setLeaderBoard(leaderboard ?? []);
     setSubmissions(subs ?? []);
     setApproval(apps ?? []);
