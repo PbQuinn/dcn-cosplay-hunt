@@ -278,14 +278,14 @@ export default function CosplayHunt({ convention, hunter }) {
                     className="eyebrow mb-2 block"
                     htmlFor="participant-name"
                   >
-                    Name
+                    Display name
                   </label>
 
                   <input
                     id="participant-name"
                     className="field-input"
                     type="text"
-                    placeholder="Your name"
+                    placeholder="Name on leaderboard"
                     value={form.name}
                     onChange={(e) => updateForm("name", e.target.value)}
                     required
@@ -298,14 +298,14 @@ export default function CosplayHunt({ convention, hunter }) {
                     className="eyebrow mb-2 block"
                     htmlFor="participant-contact"
                   >
-                    Contact
+                    Socials
                   </label>
 
                   <input
                     id="participant-contact"
                     className="field-input"
                     type="text"
-                    placeholder="Email, Discord, Instagram, etc."
+                    placeholder="Instagram, Discord, E-mail, etc."
                     value={form.contact}
                     onChange={(e) => updateForm("contact", e.target.value)}
                   />
@@ -415,7 +415,7 @@ export default function CosplayHunt({ convention, hunter }) {
                       className="eyebrow mb-2 block"
                       htmlFor="photo"
                     >
-                      Upload Photo
+                      Upload Selfie
                     </label>
 
                     <input
@@ -429,7 +429,8 @@ export default function CosplayHunt({ convention, hunter }) {
 
                     <p className="mt-2 text-xs text-parchment/40">
                       This photo will be shown to other players hunting for
-                      your character.
+                      your character. Make sure it is a clear selfie or photo of your current
+                      cosplay/outfit!
                     </p>
                   </div>
                 )}
