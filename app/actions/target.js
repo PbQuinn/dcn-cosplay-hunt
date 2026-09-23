@@ -19,8 +19,6 @@ export async function loadCaptures(conventionId) {
 }
 
 export async function updatePlayerApproval(target, status) {
-  console.log(`Updating approval status for targetId: ${target.id} to status: ${status}`);
-
   const { data, error } = await supabase
     .from("players")
     .update({ approved: status })
@@ -169,8 +167,10 @@ export async function checkPlayerCode(conventionId, targetId, code) {
     .eq("convention_id", conventionId)
     .eq("app_uid", targetId)
     .eq("code", code);
-  // If there is a match, that means the code entered was correct (conventionId/targetAppUid pairs are unique)
-  return matches?.length > 0
+
+  const isValid = matches?.length > 0;
+
+  return isValid;
 }
 
 async function getCurrentScore(conventionId, hunterId) {

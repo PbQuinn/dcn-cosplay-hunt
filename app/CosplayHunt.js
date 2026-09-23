@@ -26,6 +26,20 @@ export default function CosplayHunt({ convention, hunter }) {
     year: 'numeric'
   });
 
+  const startTime = new Date(convention.start_date).toLocaleTimeString("en-GB", {
+    timeZone: "Europe/Amsterdam",
+    hour12: false,
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  const endTime = new Date(convention.end_date).toLocaleTimeString("en-GB", {
+    timeZone: "Europe/Amsterdam",
+    hour12: false,
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
   function updateForm(field, value) {
     setForm((prev) => ({
       ...prev,
@@ -100,7 +114,7 @@ export default function CosplayHunt({ convention, hunter }) {
             {convention.name}{convention.theme && `: ${convention.theme}`}
           </p>
           {<p className="eyebrow mb-4 text-white">
-            {formattedDate} {convention.times}
+            {formattedDate} {startTime} - {endTime}
           </p>}
           {<p className="eyebrow mb-4 text-white">
             {convention.venue}
