@@ -1056,19 +1056,9 @@ export default function HunterPage({ convention, hunter, targets }) {
         </Modal>
       )}
 
-      {!infoTargetId && (
-        <Modal
-          labelledBy="target-info-title"
-          onClose={() => {
-            setInfoTargetId(null);
-          }}
-        >
-          <TargetInfoContent
-            target={targetForModal}
-            onClose={() => {
-              setInfoTargetId(null);
-            }}
-          />
+      {infoTargetId && (
+        <Modal labelledBy="target-info-title" onClose={() => setInfoTargetId(null)}>
+          <TargetInfoContent target={displayTargets.find((t) => t.app_uid === infoTargetId)} onClose={() => setInfoTargetId(null)} />
         </Modal>
       )}
 
