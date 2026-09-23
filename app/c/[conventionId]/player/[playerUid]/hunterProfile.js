@@ -876,23 +876,47 @@ export default function HunterPage({ convention, hunter, targets }) {
     }
   }
 
-  async function handleTargetRefresh(conventionId, hunterId) {
-    setRefreshAll(null);
-    setCurrentTargets([]);
+  useEffect(() => {
+  // Only start a timer if there is remaining cooldown time
+  if (timeLeftSeconds <= 0) return;
 
-    try {
-      const newTargets = await requestFreshTargetAssignment(conventionId, hunterId);
-      // Note: Code below resolve execution
-      try {
-        await updatePlayerLastRefresh(hunterId, new Date().toISOString());
-      } catch (err) {
-        console.error("%c[API] Post-resolve updatePlayerLastRefresh failed:", "color: #ef4444;", err);
+  const interval = setInterval(() => {
+    setTimeLeftSeconds((prevTime) => {
+      if (prevTime <= 1) {
+        clearInterval(interval);
+        return 0; // Hits 0 and triggers automatic switch back to "Request new targets"
       }
-      setCurrentTargets(newTargets);
-    } catch (error) {
-      console.error("%c[Handler] Error during target refresh:", "color: #ef4444; font-weight: bold;", error);
+      return prevTime - 1;
+    });
+  }, 1000);
+
+  // Clean up timer on unmount or state change
+  return () => clearInterval(interval);
+}, [timeLeftSeconds]);
+
+  async function handleTargetRefresh(conventionId, hunterId) {
+  setRefreshAll(null);
+  setCurrentTargets([]);
+
+  // Start the countdown timer immediately upon confirmation
+  setTimeLeftSeconds(REFRESH_COOLDOWN_MINUTES * 60);
+
+  try {
+    const newTargets = await requestFreshTargetAssignment(conventionId, hunterId);
+    
+    try {
+      await updatePlayerLastRefresh(hunterId, new Date().toISOString());
+    } catch (err) {
+      console.error("%c[API] Post-resolve updatePlayerLastRefresh failed:", "color: #ef4444;", err);
     }
+    
+    setCurrentTargets(newTargets);
+  } catch (error) {
+    console.error("%c[Handler] Error during target refresh:", "color: #ef4444; font-weight: bold;", error);
+    // Optional: Reset cooldown if the request fails completely
+    // setTimeLeftSeconds(0);
   }
+}
 
   const blanksCount = Math.max(0, NR_TARGETS - currentTargets.length);
   const displayTargets = [
