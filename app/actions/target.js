@@ -3,10 +3,23 @@
 import { approvalStatuses, CAPTURE_REWARD, NR_TARGETS } from "@/lib/constants";
 import { supabase } from "@/lib/supabaseServer";
 import { stringFromTargetList, targetListFromString } from "@/lib/targetList";
+import { updatePlayerLastRefresh } from "./player";
+
+// Load capture data
+export async function loadCaptures(conventionId) {
+  const { data: captures, error } = await supabase
+    .from("captures")
+    .select("*")
+    .eq("convention_id", conventionId);
+
+  if (error) {
+    console.error("Supabase Query Error:", error);
+  }
+
+  return captures;
+}
 
 export async function updatePlayerApproval(target, status) {
-console.log(`Updating approval status for targetId: ${target.id} to status: ${status}`);
-
   const { data, error } = await supabase
     .from("players")
     .update({ approved: status })
@@ -57,7 +70,7 @@ export async function getNewTarget(conventionId, hunterId, currentTargets) {
   }
 
   const forbiddenTargets = currentTargets.concat(captures.targets)
-  
+
   /* Select all hunters not equal to the requesting hunter */
   const { data: candidateTargetIds, findError } = await supabase
     .from("players")
@@ -85,46 +98,75 @@ export async function getNewTarget(conventionId, hunterId, currentTargets) {
 export async function getHunterTargetIds(conventionId, hunterId) {
   return new Promise(async (resolve) => {
     /* Select all hunters not equal to the requesting hunter */
-    const { data: hunterLine, error } = await supabase
+    let { data: hunterLine, error } = await supabase
       .from("players")
-      .select("targets")
+      .select("*")
       .eq("convention_id", conventionId)
       .eq("app_uid", hunterId)
-      .single()
 
+    if (hunterLine.length > 0) {
+      hunterLine = hunterLine[0]
+    }
     resolve(targetListFromString(hunterLine?.targets))
   })
 }
-
+// f9e13058-4acb-49fb-b494-869b7f291187 786f2e7b-1a12-4be9-a829-fde41cfbea72
 /* Request a new target */
 export async function requestNewTargetAssignment(conventionId, hunterId) {
 
   let currentTargets = await getHunterTargetIds(conventionId, hunterId);
   // Don't add a target if the player is already capped
-  console.log("Pulling")
 
   if (currentTargets.length >= NR_TARGETS) return { newTarget: undefined, targets: currentTargets };
   const { newTarget, error } = await getNewTarget(conventionId, hunterId, currentTargets);
-  console.log("the targets", newTarget);
   if (!newTarget) return { newTarget: undefined, targets: currentTargets, error: error }
 
   currentTargets.push(newTarget);
+  let targetListString = stringFromTargetList(currentTargets);
 
   const { data, updateError } = await supabase
     .from("players")
-    .update({ "targets": stringFromTargetList(currentTargets) })
+    .update({ "targets": targetListString })
     .eq("convention_id", conventionId)
     .eq("app_uid", hunterId)
 
   return { newTarget: newTarget, targets: await getTargetProfiles(conventionId, hunterId), error: updateError }
 }
 
+export async function requestFreshTargetAssignment(conventionId, appUid) {
+  // 1. Reset target string/array in Supabase
+  const { error: updateError } = await supabase
+    .from("players")
+    .update({ targets: "" })
+    .eq("convention_id", conventionId)
+    .eq("app_uid", appUid);
+
+  if (updateError) {
+    console.error("%c[API] Error resetting player targets in Supabase:", "color: #ef4444;", updateError);
+  }
+
+  // 2. Request new targets concurrently
+  const assignments = await Promise.all(
+    Array.from({ length: NR_TARGETS }, () =>
+      requestNewTargetAssignment(conventionId, appUid)
+    )
+  );
+
+  // Extract the accumulated targets array from the last call response
+  const lastResult = assignments[assignments.length - 1];
+  const targetPlayers = lastResult?.targets || [];
+
+  // Return the full player objects directly (no Step 3 query needed!)
+  return targetPlayers; 
+}
+
 /* Returns the player-visible data for the targets of a given hunter */
 export async function getTargetProfiles(conventionId, hunterId) {
   const targetIds = await getHunterTargetIds(conventionId, hunterId);
-  return (
-    await Promise.all(targetIds.map((id) => getTargetInformation(id, conventionId, hunterId)))
-  ).filter(Boolean);
+  let ret = (
+    await Promise.all(targetIds.map(async (id) => await getTargetInformation(id, conventionId, hunterId)))
+  ).filter(Boolean)
+  return ret;
 }
 
 // Internal base fetcher (not exported as a server action)
@@ -181,19 +223,21 @@ export async function checkPlayerCode(conventionId, targetId, code) {
     .eq("convention_id", conventionId)
     .eq("app_uid", targetId)
     .eq("code", code);
-  // If there is a match, that means the code entered was correct (conventionId/targetAppUid pairs are unique)
-  return matches?.length > 0
+
+  const isValid = matches?.length > 0;
+
+  return isValid;
 }
 
 async function getCurrentScore(conventionId, hunterId) {
   return new Promise(async (resolve) => {
-      const { data } = await supabase
+    const { data } = await supabase
       .from("players")
       .select("score")
       .eq("convention_id", conventionId)
       .eq("app_uid", hunterId)
       .single();
-      resolve(data?.score)
+    resolve(data?.score)
   })
 }
 
@@ -214,41 +258,60 @@ async function incrementScore(conventionId, hunterId, value) {
 /* Given a target and its code, award the player with score and remove the target from the list, returning the updated target list */
 export async function performCapture(conventionId, hunterId, targetId) {
   let currentTargets = await getHunterTargetIds(conventionId, hunterId);
+
+  // Track original position before filtering
+  const originalIndex = currentTargets.indexOf(targetId);
+
   currentTargets = currentTargets.filter((id) => id != targetId);
+
   let currentScore = await getCurrentScore(conventionId, hunterId);
 
   let ret = {
-    targets: currentTargets,
+    targets: [],
     score: currentScore,
     error: undefined
-  }
+  };
 
-  // Log the capture in the table
+  // 1. Log the capture in the table
   const insertError = await insertCapture(conventionId, hunterId, targetId);
-
   if (insertError) {
-    console.error("Something went wrong trying to insert the capture in the table:", insertError)
-    ret.error = insertError
-    return ret
+    console.error("Error inserting capture:", insertError);
+    ret.error = insertError;
+    return ret;
   }
 
-  // Remove the capture from the player's targets
-  const { data, error } = await supabase
+  // 2. Automatically request a replacement target to fill the open slot back up to 5 (NR_TARGETS)
+  let replacementTargetId = undefined;
+  if (currentTargets.length < NR_TARGETS) {
+    const { newTarget, error: newTargetError } = await getNewTarget(conventionId, hunterId, currentTargets);
+    if (newTarget) {
+      replacementTargetId = newTarget;
+      currentTargets.push(newTarget);
+    } else if (newTargetError) {
+      console.warn("Could not assign replacement target:", newTargetError);
+    }
+  }
+
+  // 3. Update Supabase with the new array of target IDs (length 5)
+  const { error: updateError } = await supabase
     .from("players")
     .update({ "targets": stringFromTargetList(currentTargets) })
     .eq("convention_id", conventionId)
     .eq("app_uid", hunterId);
 
-  if (error) {
-    console.error("Something went wrong trying to update the player:", error)
-    ret.error = error
-    return ret
+  if (updateError) {
+    console.error("Error updating player targets in DB:", updateError);
+    ret.error = updateError;
+    return ret;
   }
 
-    ret.targets = await getTargetProfiles(conventionId, hunterId);
-    ret.score = await incrementScore(conventionId, hunterId, CAPTURE_REWARD);
+  // 4. Fetch updated profiles (now 5 targets) and increment score
+  const updatedProfiles = await getTargetProfiles(conventionId, hunterId);
+  ret.score = await incrementScore(conventionId, hunterId, CAPTURE_REWARD);
+  ret.targets = updatedProfiles; // Full array in DB order
+  ret.replacementTarget = updatedProfiles.find((t) => t?.app_uid === replacementTargetId);
 
-  return ret
+  return ret;
 }
 
 /* Given a hunter, target and a convention, insert a capture pair into the captures table */
@@ -275,6 +338,6 @@ async function getHunterCaptureIds(conventionId, hunterId) {
       .select("target_id")
       .eq("convention_id", conventionId)
       .eq("hunter_id", hunterId)
-    resolve({ targets: captures?.map( (target) => target.target_id), error: error })
+    resolve({ targets: captures?.map((target) => target.target_id), error: error })
   })
 }

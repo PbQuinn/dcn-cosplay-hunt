@@ -4,17 +4,23 @@ import { useEffect, useRef, useState } from "react";
 import {
   Camera,
   X,
+  RefreshCcw,
   Search,
   UserRound,
   CircleCheck,
   CircleAlert,
   ChevronRight,
 } from "lucide-react";
-import { NR_TARGETS, approvalStatusLabels } from "@/lib/constants";
 import {
-  checkPlayerCode, performCapture, requestNewTargetAssignment, updatePlayerApproval,
-  updatePlayerVisibility, removePlayerPhoto
+  NR_TARGETS, REFRESH_COOLDOWN_MINUTES,
+  REFRESH_COOLDOWN_MILLISECONDS, approvalStatusLabels, approvalStatuses
+} from "@/lib/constants";
+import {
+  checkPlayerCode, performCapture, requestFreshTargetAssignment,
+  requestNewTargetAssignment, updatePlayerApproval
 } from "@/app/actions/target";
+import { updatePlayerLastRefresh } from "@/app/actions/player";
+import { Plus, Loader2 } from "lucide-react";
 
 function initialsFor(name) {
   if (!name) return "??";
@@ -201,10 +207,22 @@ function TargetCard({ target, captured, onOpenInfo, onOpenCapture }) {
   const [errored, setErrored] = useState(false);
   const showImage = Boolean(target?.photoUrl) && !errored;
 
+  const handleInfoClick = () => {
+    onOpenInfo(target?.app_uid);
+  };
+
+  const handleImageError = () => {
+    setErrored(true);
+  };
+
+  const handleCaptureClick = () => {
+    onOpenCapture(target);
+  };
+
   return (
     <li className="flex w-[76vw] max-w-[320px] flex-none snap-center flex-col gap-2.5 rounded-2xl border border-parchment/10 bg-ink-light p-2.5">
       <button
-        onClick={() => onOpenInfo(target?.app_uid)}
+        onClick={handleInfoClick}
         aria-label={`View details for ${target?.character}`}
         className="relative block aspect-[4/5] w-full cursor-pointer overflow-hidden rounded-xl bg-ink"
       >
@@ -212,7 +230,7 @@ function TargetCard({ target, captured, onOpenInfo, onOpenCapture }) {
           <img
             src={target?.photoUrl}
             alt={target?.character}
-            onError={() => setErrored(true)}
+            onError={handleImageError}
             className="h-full w-full object-cover"
           />
         ) : (
@@ -247,7 +265,7 @@ function TargetCard({ target, captured, onOpenInfo, onOpenCapture }) {
       </div>
 
       <button
-        onClick={() => { onOpenCapture(target) }}
+        onClick={handleCaptureClick}
         disabled={captured}
         className={
           captured
@@ -262,24 +280,25 @@ function TargetCard({ target, captured, onOpenInfo, onOpenCapture }) {
   );
 }
 
-
-function BlankTarget({ conventionId, hunterId, onNewTargets, onNoCharFound }) {
-
+function RequestNewTargetCard({ conventionId, hunterId, onNewTargets, onNoCharFound }) {
   const [status, setStatus] = useState("idle"); // idle | loading | error
+
   async function requestNewTarget() {
     setStatus("loading");
     try {
-      const { newTarget, targets, error } = await requestNewTargetAssignment(conventionId, hunterId);
+      const { newTarget, targets, error } = await requestNewTargetAssignment(
+        conventionId,
+        hunterId
+      );
+
       if (newTarget) {
         onNewTargets(targets);
       } else {
         if (error) {
           setStatus("error");
         } else {
-          setStatus("idle");
           onNoCharFound(true);
         }
-
       }
     } catch (e) {
       setStatus("error");
@@ -288,48 +307,63 @@ function BlankTarget({ conventionId, hunterId, onNewTargets, onNoCharFound }) {
     }
   }
 
-  const [errored, setErrored] = useState(false);
+  const isLoading = status === "loading";
 
   return (
-    <li className="flex w-[76vw] max-w-[320px] flex-none snap-center flex-col gap-2.5 rounded-2xl border border-parchment/10 bg-ink-light p-2.5">
+    <li className="flex w-[76vw] max-w-[320px] flex-none snap-center flex-col justify-between rounded-2xl border border-dashed border-parchment/20 bg-ink-light/40 p-2.5 transition hover:border-parchment/40">
       <button
-        aria-label={`Request new`}
-        className="relative block aspect-[4/5] w-full cursor-pointer overflow-hidden rounded-xl bg-ink"
+        type="button"
+        onClick={requestNewTarget}
+        disabled={isLoading}
+        aria-label="Request new target"
+        className="group relative flex aspect-[4/5] w-full cursor-pointer flex-col items-center justify-center rounded-xl border border-parchment/10 bg-ink/60 transition-all hover:bg-ink hover:border-flare/40 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
       >
-        <div className="flex h-full w-full items-center justify-center font-mono text-sm text-parchment/50">
-          ??
+        {/* Frame Corners */}
+        <span className="absolute left-2.5 top-2.5 h-5 w-5 rounded-tl-sm border-l-2 border-t-2 border-parchment/40 transition-colors group-hover:border-flare" />
+        <span className="absolute right-2.5 top-2.5 h-5 w-5 rounded-tr-sm border-r-2 border-t-2 border-parchment/40 transition-colors group-hover:border-flare" />
+        <span className="absolute bottom-2.5 left-2.5 h-5 w-5 rounded-bl-sm border-b-2 border-l-2 border-parchment/40 transition-colors group-hover:border-flare" />
+        <span className="absolute bottom-2.5 right-2.5 h-5 w-5 rounded-br-sm border-b-2 border-r-2 border-parchment/40 transition-colors group-hover:border-flare" />
+
+        {/* Plus Button Icon / Spinner */}
+        <div className="flex h-14 w-14 items-center justify-center rounded-full border border-parchment/20 bg-ink-light text-parchment transition-all group-hover:scale-105 group-hover:border-flare group-hover:bg-flare group-hover:text-ink">
+          {isLoading ? (
+            <Loader2 className="h-7 w-7 animate-spin" />
+          ) : (
+            <Plus className="h-7 w-7" strokeWidth={2.5} />
+          )}
         </div>
 
-
-        <span className="absolute left-2.5 top-2.5 h-5 w-5 rounded-tl-sm border-l-2 border-t-2 border-parchment/85" />
-        <span className="absolute right-2.5 top-2.5 h-5 w-5 rounded-tr-sm border-r-2 border-t-2 border-parchment/85" />
-        <span className="absolute bottom-2.5 left-2.5 h-5 w-5 rounded-bl-sm border-b-2 border-l-2 border-parchment/85" />
-        <span className="absolute bottom-2.5 right-2.5 h-5 w-5 rounded-br-sm border-b-2 border-r-2 border-parchment/85" />
-        <span className="motion-safe:animate-scan pointer-events-none absolute inset-x-0 -top-[40%] h-[40%] bg-gradient-to-b from-transparent via-sage/20 to-transparent" />
-
-        <span className="absolute inset-x-2.5 bottom-2.5 w-fit rounded-lg bg-ink/60 px-2 py-1 font-mono text-[10.5px] uppercase tracking-wide text-parchment">
-          {"Unknown series"}
+        <span className="mt-4 font-mono text-xs uppercase tracking-wider text-parchment/60 group-hover:text-parchment">
+          {isLoading ? "Fetching target..." : "Request new target"}
         </span>
       </button>
 
-      <div>
-        <h3 className="font-display text-2xl leading-none tracking-wide text-parchment">
-          {"Unidentified cosplayer"}
+      <div className="px-1 py-2 text-center">
+        <h3 className="font-display text-xl leading-none tracking-wide text-parchment">
+          Request new target
         </h3>
-        <p className="mt-1 font-body text-sm text-parchment/60">
-          {"Identity unconfirmed"}
+        <p className="mt-1 font-body text-xs text-parchment/60">
+          Get assigned an additional cosplayer target
         </p>
       </div>
 
       <button
+        type="button"
         onClick={requestNewTarget}
-        disabled={status === "loading"}
-        className={
-          "flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-flare py-3 font-body text-[14.5px] font-semibold text-ink transition hover:bg-flare-dim active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-flare/50 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-light"
-        }
+        disabled={isLoading}
+        className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-flare py-3 font-body text-[14.5px] font-semibold text-ink transition hover:bg-flare-dim active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-flare/50 disabled:opacity-50"
       >
-        <Search size={17} strokeWidth={2.25} />
-        {status === "loading" ? "Requesting…" : "Request new"}
+        {isLoading ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Requesting…
+          </>
+        ) : (
+          <>
+            <Plus size={17} strokeWidth={2.25} />
+            Request new target
+          </>
+        )}
       </button>
     </li>
   );
@@ -338,14 +372,30 @@ function BlankTarget({ conventionId, hunterId, onNewTargets, onNoCharFound }) {
 // ---------------------------------------------------------------------------
 // Modal contents
 // ---------------------------------------------------------------------------
-export function TargetInfoContent({ target, onClose, isAdmin = false }) {
+export function TargetInfoContent({
+  target,
+  onClose,
+  isAdmin = false,
+  closeOnAction = false,
+  captured = false,
+  onOpenCapture
+}) {
   const [errored, setErrored] = useState(false);
   const [currentApprovedStatus, setCurrentApprovedStatus] = useState(target?.approved);
   const [isUpdating, setIsUpdating] = useState(false);
   const showImage = Boolean(target?.photoUrl) && !errored;
 
+  const handleCaptureClick = () => {
+    if (onOpenCapture && target) {
+      onClose(); // Close the info modal
+      onOpenCapture(target); // Open the capture modal
+    }
+  };
+
   const updateApprovalStatus = async (status) => {
-    if (!target?.id) return;
+    if (!target?.id) {
+      return;
+    }
 
     setIsUpdating(true);
     try {
@@ -354,14 +404,24 @@ export function TargetInfoContent({ target, onClose, isAdmin = false }) {
       // Update local state so UI updates immediately
       setCurrentApprovedStatus(status);
 
+      // Optional: Inform parent component of the updated record
+      if (onUpdateTarget && data?.[0]) {
+        onUpdateTarget(data[0]);
+      }
+
+      if (closeOnAction) {
+        onClose();
+      }
     } catch (err) {
-      console.error("Failed to update status:", err);
+      console.error("%c[TargetInfoContent] Failed to update status:", "color: #ef4444; font-weight: bold;", err);
     } finally {
       setIsUpdating(false);
     }
   };
 
-  if (!target) return null;
+  if (!target) {
+    return null;
+  }
 
   return (
     <div className="relative pt-1">
@@ -377,7 +437,7 @@ export function TargetInfoContent({ target, onClose, isAdmin = false }) {
             style={{
               display: "flex",
               width: "auto",
-              height: "120%",
+              height: "100%",
             }}
           />
         ) : (
@@ -425,7 +485,8 @@ export function TargetInfoContent({ target, onClose, isAdmin = false }) {
           <div className="flex items-center justify-center gap-3 pt-2">
             <button
               type="button"
-              onClick={() => updateApprovalStatus(2)}
+              disabled={isUpdating}
+              onClick={() => updateApprovalStatus(approvalStatuses.REJECTED)}
               className="flex-1 cursor-pointer rounded-xl border border-flare/30 bg-flare/10 px-4 py-2.5 font-body text-sm font-semibold text-flare transition-all hover:bg-flare hover:text-ink active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-flare/50"
             >
               Reject
@@ -433,7 +494,8 @@ export function TargetInfoContent({ target, onClose, isAdmin = false }) {
 
             <button
               type="button"
-              onClick={() => updateApprovalStatus(1)}
+              disabled={isUpdating}
+              onClick={() => updateApprovalStatus(approvalStatuses.APPROVED)}
               className="flex-1 cursor-pointer rounded-xl bg-sage px-4 py-2.5 font-body text-sm font-bold text-ink transition-all hover:bg-sage/90 hover:shadow-lg hover:shadow-sage/10 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage/50"
             >
               Approve
@@ -444,11 +506,55 @@ export function TargetInfoContent({ target, onClose, isAdmin = false }) {
         /* ---------------------------------------------------- */
         /* PUBLIC INSTRUCTIONS                                 */
         /* ---------------------------------------------------- */
-        <p className="mt-3 font-body text-sm leading-relaxed text-parchment/80">
-          See if you can spot {target.character || "this cosplayer"}! Once you
-          find them, ask for their 4-digit code to score points!
-        </p>
+        <div className="mt-3 space-y-4">
+          <p className="font-body text-sm leading-relaxed text-parchment/80">
+            See if you can spot {target.character || "this cosplayer"}! Once you
+            find them, ask for their 4-digit code to score points!
+          </p>
+
+          <button
+            onClick={handleCaptureClick}
+            disabled={captured}
+            className={
+              captured
+                ? "flex w-full items-center justify-center gap-2 rounded-xl border border-sage bg-ink py-3 font-body text-[14.5px] font-semibold text-sage"
+                : "flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-flare py-3 font-body text-[14.5px] font-semibold text-ink transition hover:bg-flare-dim active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-flare/50 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-light"
+            }
+          >
+            <Camera size={17} strokeWidth={2.25} />
+            {captured ? "Logged" : "Capture"}
+          </button>
+        </div>
+
       )}
+    </div>
+  );
+}
+
+export function RefreshAllContent({ onClose, onConfirm }) {
+  return (
+    <div>
+      <p className="font-body text-base text-parchment mt-2 mb-6">
+        Are you sure you want to refresh your entire pool? You can only do this once every {REFRESH_COOLDOWN_MINUTES} minutes!
+      </p>
+
+      {/* Side-by-side Buttons */}
+      <div className="flex items-center justify-center gap-3">
+        <button
+          type="button"
+          onClick={() => onClose()}
+          className="px-4 py-2 text-sm rounded-xl border border-parchment/20 text-parchment/80 hover:bg-parchment/10 transition-colors"
+        >
+          No, I want to keep hunting my current list!
+        </button>
+        <button
+          type="button"
+          onClick={() => onConfirm()}
+          className="px-4 py-2 text-sm rounded-xl bg-red-600/80 hover:bg-red-600 text-white font-medium transition-colors"
+        >
+          Yes, I understand
+        </button>
+      </div>
     </div>
   );
 }
@@ -463,7 +569,9 @@ function CaptureContent({ conventionId, hunter, target, onClose, onSuccess }) {
     if (correct) {
       setStatus("success");
       onSuccess(conventionId, hunter.app_uid, target.app_uid);
-      setTimeout(onClose, 900);
+      setTimeout(() => {
+        onClose();
+      }, 900);
     } else {
       setStatus("error");
     }
@@ -471,7 +579,9 @@ function CaptureContent({ conventionId, hunter, target, onClose, onSuccess }) {
 
   return (
     <div className="relative pt-1">
-      <ModalCloseButton onClose={onClose} />
+      <ModalCloseButton onClose={() => {
+        onClose();
+      }} />
       <Eyebrow>Log a capture</Eyebrow>
       <h2 id="capture-title" className="mb-2 mt-0.5 font-display text-3xl text-parchment">
         {target.character}
@@ -742,34 +852,6 @@ function HunterProfileContent({ hunter, score, photoUrl, onClose, onPhotoDeleted
   );
 }
 
-{/* <div className="rounded-lg border border-parchment/10 p-4">
-                <label
-                  htmlFor="invisible"
-                  className="flex cursor-pointer items-start gap-3"
-                >
-                  <input
-                    id="invisible"
-                    type="checkbox"
-                    checked={form.invisible}
-                    onChange={(e) =>
-                      updateForm("invisible", e.target.checked)
-                    }
-                    className="mt-1 h-4 w-4"
-                  />
-
-                  <span>
-                    <span className="block font-bold">
-                      Invisible
-                    </span>
-
-                    <span className="mt-1 block text-sm text-parchment/50">
-                      Hide my cosplay from the public hunt. If unchecked,
-                      you must provide a photo.
-                    </span>
-                  </span>
-                </label>
-              </div> */}
-
 // ---------------------------------------------------------------------------
 // Top mission bar
 // ---------------------------------------------------------------------------
@@ -810,6 +892,13 @@ function MissionBar({ hunter, score, photoUrl, onOpenProfile }) {
   );
 }
 
+function refreshPool(conventionId, hunterId, setCurrentTargets) {
+  requestFreshTargetAssignment(
+    convention.id,
+    hunter?.app_uid
+  )
+}
+
 // ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
@@ -821,21 +910,139 @@ export default function HunterPage({ convention, hunter, targets }) {
   const [score, setScore] = useState(hunter?.score ?? 0);
   const [currentTargets, setCurrentTargets] = useState(targets);
   const [showNoCharFoundModal, setShowNoCharFoundModal] = useState(false);
+  const [refreshAll, setRefreshAll] = useState(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Track the last refresh timestamp locally so UI updates immediately
+  const [lastRefreshTime, setLastRefreshTime] = useState(
+    hunter?.last_refresh ? new Date(hunter.last_refresh).getTime() : null
+  );
+
+  // Track remaining seconds for cooldown countdown
+  const [timeLeftSeconds, setTimeLeftSeconds] = useState(0);
+
+  // Sync state if hunter prop updates externally
+  useEffect(() => {
+    if (hunter?.last_refresh) {
+      const parsedTime = new Date(hunter.last_refresh).getTime();
+      setLastRefreshTime(parsedTime);
+    }
+  }, [hunter?.last_refresh]);
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (!lastRefreshTime) {
+      setTimeLeftSeconds(0);
+      return;
+    }
+
+    const calculateTimeLeft = () => {
+      const now = Date.now();
+      const nextAvailableTime = lastRefreshTime + REFRESH_COOLDOWN_MILLISECONDS;
+      const diffMs = nextAvailableTime - now;
+      const computedSeconds = diffMs <= 0 ? 0 : Math.ceil(diffMs / 1000);
+
+      if (diffMs <= 0) {
+        setTimeLeftSeconds(0);
+      } else {
+        setTimeLeftSeconds(computedSeconds);
+      }
+    };
+
+    calculateTimeLeft(); // Run immediately
+
+    const interval = setInterval(calculateTimeLeft, 1000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [lastRefreshTime]);
+
+  // Helper to format remaining seconds as MM:SS
+  const formatCountdown = (totalSeconds) => {
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+  };
 
   async function handleCaptureSuccess(conventionId, hunterId, targetId) {
-    const { targets, score, error } = await performCapture(conventionId, hunterId, targetId);
-    if (!error) {
+    const startTime = performance.now();
+
+    try {
+      // 1. Destructure targets (full DB array) and score
+      const { targets, score, error } = await performCapture(
+        conventionId,
+        hunterId,
+        targetId
+      );
+
+      const duration = (performance.now() - startTime).toFixed(2);
+
+      if (error) {
+        console.error(`[handleCaptureSuccess] performCapture failed (${duration}ms):`, error);
+        return;
+      }
+
+      // 2. Mark target as captured in local tracking set
       setCapturedIds((prev) => new Set(prev).add(targetId));
-      setCurrentTargets(targets);
+
+      // 3. Update score state
       setScore(score);
+
+      // 4. Overwrite local UI state with exact DB target order
+      setCurrentTargets(targets);
+
+    } catch (err) {
+      console.error("[handleCaptureSuccess] Unexpected exception thrown:", err);
     }
   }
 
-  const blanksCount = Math.max(0, NR_TARGETS - currentTargets.length);
-  const displayTargets = [
-    ...currentTargets,
-    ...Array.from({ length: blanksCount }, () => undefined),
-  ];
+  useEffect(() => {
+    // Only start a timer if there is remaining cooldown time
+    if (timeLeftSeconds <= 0) return;
+
+    const interval = setInterval(() => {
+      setTimeLeftSeconds((prevTime) => {
+        if (prevTime <= 1) {
+          clearInterval(interval);
+          return 0; // Hits 0 and triggers automatic switch back to "Request new targets"
+        }
+        return prevTime - 1;
+      });
+    }, 1000);
+
+    // Clean up timer on unmount or state change
+    return () => clearInterval(interval);
+  }, [timeLeftSeconds]);
+
+  async function handleTargetRefresh(conventionId, hunterId) {
+    setIsRefreshing(true);
+    setRefreshAll(null);
+    setCurrentTargets([]);
+
+    const nowMs = Date.now();
+    setLastRefreshTime(nowMs);
+
+    try {
+      const newTargets = await requestFreshTargetAssignment(conventionId, hunterId);
+
+      const nowIso = new Date().toISOString();
+
+      try {
+        await updatePlayerLastRefresh(hunterId, nowIso);
+
+      } catch (err) {
+        console.error("%c[API] Post-resolve updatePlayerLastRefresh failed:", "color: #ef4444; font-weight: bold;", err);
+        console.error("%c[API] Error context:", "color: #f87171;", { hunterId, nowIso });
+      }
+      setCurrentTargets(newTargets);
+    } catch (error) {
+      console.error("%c[Handler] Error during target refresh:", "color: #ef4444; font-weight: bold;", error);
+      console.error("%c[Handler] Failed with params:", "color: #f87171;", { conventionId, hunterId });
+    } finally {
+      setIsRefreshing(false);
+    }
+  }
 
   // Same route used for target photos, called once and reused everywhere
   // this hunter's own photo appears (mission bar avatar + profile modal)
@@ -846,9 +1053,12 @@ export default function HunterPage({ convention, hunter, targets }) {
       : null
   );
 
+  const isCooldownActive = timeLeftSeconds > 0;
+  const currentInfoTarget = currentTargets.find((t) => t?.app_uid === infoTargetId);
+
   if (!hunter) {
     return (
-      <div className="bg-grain flex min-h-screen items-center justify-center bg-ink bg-repeat px-10 text-center">
+      <div className="bg-grain flex items-center justify-center bg-ink bg-repeat px-10 text-center">
         <p className="font-body text-parchment/60">
           No hunter profile found for this device. Check in at the
           registration desk to get your badge and target list.
@@ -858,7 +1068,7 @@ export default function HunterPage({ convention, hunter, targets }) {
   }
 
   return (
-    <div className="bg-grain relative mx-auto min-h-screen max-w-[560px] bg-ink bg-repeat font-body text-parchment">
+    <div className="bg-grain relative mx-auto max-w-[560px] bg-ink bg-repeat font-body text-parchment">
       <MissionBar
         hunter={hunter}
         score={score}
@@ -866,50 +1076,86 @@ export default function HunterPage({ convention, hunter, targets }) {
         onOpenProfile={() => setProfileOpen(true)}
       />
 
-      <main className="pb-10 pt-4.5">
-        <p className="mb-3.5 px-4 font-mono text-[11px] uppercase tracking-wide text-parchment/50">
-          {convention?.name ? `${convention.name}` : "Convention Info Unavailable"}
-        </p>
-
+      <main className="pb-1 pt-4.5">
         <ul
           role="list"
           className="m-0 flex snap-x snap-mandatory gap-3.5 overflow-x-auto px-4 pb-2.5 pt-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          {displayTargets.map((target, i) => {
-            return target ?
-              <TargetCard
-                key={`${target.app_uid}-${i}`}
-                target={target}
-                captured={capturedIds.has(target.app_uid)}
-                onOpenInfo={setInfoTargetId}
-                onOpenCapture={setCaptureTarget}
-              /> :
-              <BlankTarget
-                key={`blank-${i}`}
-                conventionId={convention?.id}
-                hunterId={hunter?.app_uid}
-                onNewTargets={setCurrentTargets}
-                onNoCharFound={setShowNoCharFoundModal}
-              />
-          })}
+          {isRefreshing ? (
+            <div className="w-full flex flex-col items-center justify-center p-8 space-y-3 min-h-[200px]">
+              <div className="w-8 h-8 border-4 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
+              <p className="text-sm font-medium text-gray-600">Waiting for new targets...</p>
+            </div>
+          ) : (
+            <>
+              {/* Render assigned target cards */}
+              {currentTargets.map((target, i) => (
+                <TargetCard
+                  key={`${target.app_uid}-${i}`}
+                  target={target}
+                  captured={capturedIds.has(target.app_uid)}
+                  onOpenInfo={setInfoTargetId}
+                  onOpenCapture={setCaptureTarget}
+                />
+              ))}
+
+              {/* Render a single Request New Target card if under max targets limit */}
+              {currentTargets.length < NR_TARGETS && (
+                <RequestNewTargetCard
+                  conventionId={convention?.id}
+                  hunterId={hunter?.app_uid}
+                  onNewTargets={setCurrentTargets}
+                  onNoCharFound={setShowNoCharFoundModal}
+                />
+              )}
+            </>
+          )}
         </ul>
+
+        <button
+          onClick={() => {
+            if (!isCooldownActive) {
+              setRefreshAll(true);
+            }
+          }}
+          disabled={isCooldownActive}
+          className={`flex w-[70%] mx-auto items-center justify-center gap-3 rounded-xl border py-3 font-body text-[14.5px] font-semibold transition-all ${isCooldownActive
+            ? "border-subtle/30 bg-ink/50 text-parchment/40 cursor-not-allowed opacity-60"
+            : "border-subtle bg-ink text-subtle hover:bg-subtle/10 cursor-pointer"
+            }`}
+        >
+          <RefreshCcw size={17} strokeWidth={2.25} className={isCooldownActive ? "opacity-40" : ""} />
+          {isCooldownActive ? formatCountdown(timeLeftSeconds) : "Request new targets"}
+        </button>
       </main>
 
-      {infoTargetId && (
-
-        <Modal labelledBy="target-info-title" onClose={() => setInfoTargetId(null)}>
-          <TargetInfoContent target={displayTargets.find((t) => t.app_uid === infoTargetId)} onClose={() => setInfoTargetId(null)} />
+      {infoTargetId && currentInfoTarget && (
+        <Modal
+          labelledBy="target-info-title"
+          onClose={() => setInfoTargetId(null)}
+        >
+          <TargetInfoContent
+            target={currentInfoTarget}
+            captured={capturedIds.has(currentInfoTarget.app_uid)}
+            onOpenCapture={setCaptureTarget}
+            onClose={() => setInfoTargetId(null)}
+          />
         </Modal>
       )}
 
       {captureTarget && (
-        <Modal labelledBy="capture-title" onClose={() => setCaptureTarget(null)}>
+        <Modal
+          labelledBy="capture-title"
+          onClose={() => setCaptureTarget(null)}
+        >
           <CaptureContent
             conventionId={convention.id}
             hunter={hunter}
             target={captureTarget}
             onClose={() => setCaptureTarget(null)}
-            onSuccess={handleCaptureSuccess}
+            onSuccess={(...args) => {
+              handleCaptureSuccess(...args);
+            }}
           />
         </Modal>
       )}
@@ -927,15 +1173,32 @@ export default function HunterPage({ convention, hunter, targets }) {
       )}
 
       {infoTargetId && (
-
         <Modal labelledBy="target-info-title" onClose={() => setInfoTargetId(null)}>
-          <TargetInfoContent target={displayTargets.find((t) => t.app_uid === infoTargetId)} onClose={() => setInfoTargetId(null)} />
+          <TargetInfoContent target={currentTargets.find((t) => t?.app_uid === infoTargetId)} onClose={() => setInfoTargetId(null)} />
         </Modal>
       )}
 
       {showNoCharFoundModal && (
         <Modal labelledBy="capture-title" onClose={() => setCaptureTarget(null)}>
           <NoCharFoundModal onClose={setShowNoCharFoundModal} />
+        </Modal>
+      )}
+
+      {refreshAll && (
+        <Modal
+          labelledBy="target-info-title"
+          onClose={() => {
+            setRefreshAll(null);
+          }}
+        >
+          <RefreshAllContent
+            onClose={() => {
+              setRefreshAll(null);
+            }}
+            onConfirm={() => {
+              handleTargetRefresh(convention.id, hunter.app_uid);
+            }}
+          />
         </Modal>
       )}
     </div>

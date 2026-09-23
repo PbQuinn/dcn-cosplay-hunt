@@ -4,10 +4,10 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { randomUUID } from "crypto";
 import { supabase } from "@/lib/supabaseServer";
-import { NR_TARGETS } from "@/lib/constants";
-import { getNewTarget, requestNewTargetAssignment } from "./target";
+import { requestFreshTargetAssignment } from "./target";
 import { stringFromTargetList } from "@/lib/targetList";
 
+// Save player data
 export async function createPlayer(conventionId, formData) {
     const name = formData.get("name");
     const contact = formData.get("contact");
@@ -75,7 +75,7 @@ export async function createPlayer(conventionId, formData) {
         // Database fields
         convention_id: conventionId,
         app_uid: appUid,
-        code: Math.ceil(Math.random() * 9999),
+        code: String(Math.ceil(Math.random() * 9999)).padStart(4, "0"),
         targets: "", // Character is populated with targets only upon succesful creation
         created_at: new Date().toISOString(),
         // User provided fields
@@ -114,17 +114,54 @@ export async function createPlayer(conventionId, formData) {
             path: "/",
         });
 
+        await requestFreshTargetAssignment(conventionId, appUid);
         
-        let targetList = [];
-        for (let i = 0; i < NR_TARGETS; i++) {
-            let newTarget = await requestNewTargetAssignment(conventionId, appUid, targetList);
-            if (newTarget) {
-                targetList.push(newTarget);
-            }
-        }
 
         // Send the player directly to their page.
         redirect(`/c/${conventionId}/player/${appUid}`);
     }
 }
+
+export async function updatePlayerLastRefresh(playerUid, status) {
+  const { data, error } = await supabase
+    .from("players")
+    .update({ last_refresh: status })
+    .eq("app_uid", playerUid)
+    .select();
+
+  if (error) {
+    console.error("%c[DB] Supabase update failed:", "color: #ef4444; font-weight: bold;", error);
+    throw new Error(error.message);
+  }
+
+  return data;
+}
+// Load player data
+export async function loadPlayers(conventionId) {
+    const { data: players, error } = await supabase
+        .from("players")
+        .select("*")
+        .eq("convention_id", conventionId);
+
+    if (error) {
+        console.error("Supabase Query Error:", error);
+    }
+
+    return players;
+}
+
+export async function loadPlayerFromUid(playerUid) {
+    const { data: player, error } = await supabase
+        .from("players")
+        .select("*")
+        .in("app_uid", playerUid);
+
+    if (error) {
+        console.error("Supabase Query Error:", error);
+    }
+
+    return player;
+}
+
+
 

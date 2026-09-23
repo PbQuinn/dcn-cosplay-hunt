@@ -26,6 +26,20 @@ export default function CosplayHunt({ convention, hunter }) {
     year: 'numeric'
   });
 
+  const startTime = new Date(convention.start_date).toLocaleTimeString("en-GB", {
+    timeZone: "Europe/Amsterdam",
+    hour12: false,
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  const endTime = new Date(convention.end_date).toLocaleTimeString("en-GB", {
+    timeZone: "Europe/Amsterdam",
+    hour12: false,
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
   function updateForm(field, value) {
     setForm((prev) => ({
       ...prev,
@@ -100,7 +114,7 @@ export default function CosplayHunt({ convention, hunter }) {
             {convention.name}{convention.theme && `: ${convention.theme}`}
           </p>
           {<p className="eyebrow mb-4 text-white">
-            {formattedDate} {convention.times}
+            {formattedDate} {startTime} - {endTime}
           </p>}
           {<p className="eyebrow mb-4 text-white">
             {convention.venue}
@@ -193,7 +207,6 @@ export default function CosplayHunt({ convention, hunter }) {
                 <img
                   src="https://hyzullnybsghptluvbrw.supabase.co/storage/v1/object/public/socials-icons/instagram.png"
                   alt="Follow us on Instagram!"
-                  fill
                   className="object-cover rounded-lg hover:opacity-80 transition-opacity"
                   style={{
                     display: 'block',
@@ -209,7 +222,6 @@ export default function CosplayHunt({ convention, hunter }) {
                 <img
                   src="https://hyzullnybsghptluvbrw.supabase.co/storage/v1/object/public/socials-icons/discord.png"
                   alt="Join our Discord server!"
-                  fill
                   className="object-cover rounded-lg hover:opacity-80 transition-opacity"
                   style={{
                     display: 'block',
@@ -264,14 +276,14 @@ export default function CosplayHunt({ convention, hunter }) {
                     className="eyebrow mb-2 block"
                     htmlFor="participant-name"
                   >
-                    Name
+                    Display name
                   </label>
 
                   <input
                     id="participant-name"
                     className="field-input"
                     type="text"
-                    placeholder="Your name"
+                    placeholder="Name on leaderboard"
                     value={form.name}
                     onChange={(e) => updateForm("name", e.target.value)}
                     required
@@ -284,14 +296,14 @@ export default function CosplayHunt({ convention, hunter }) {
                     className="eyebrow mb-2 block"
                     htmlFor="participant-contact"
                   >
-                    Contact
+                    Socials
                   </label>
 
                   <input
                     id="participant-contact"
                     className="field-input"
                     type="text"
-                    placeholder="Email, Discord, Instagram, etc."
+                    placeholder="Instagram, Discord, E-mail, etc."
                     value={form.contact}
                     onChange={(e) => updateForm("contact", e.target.value)}
                   />
@@ -401,7 +413,7 @@ export default function CosplayHunt({ convention, hunter }) {
                       className="eyebrow mb-2 block"
                       htmlFor="photo"
                     >
-                      Upload Photo
+                      Upload Selfie
                     </label>
 
                     <input
@@ -415,7 +427,8 @@ export default function CosplayHunt({ convention, hunter }) {
 
                     <p className="mt-2 text-xs text-parchment/40">
                       This photo will be shown to other players hunting for
-                      your character.
+                      your character. Make sure it is a clear selfie or photo of your current
+                      cosplay/outfit!
                     </p>
                   </div>
                 )}
