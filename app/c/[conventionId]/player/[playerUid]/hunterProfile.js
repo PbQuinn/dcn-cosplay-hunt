@@ -825,6 +825,12 @@ export default function HunterPage({ convention, hunter, targets }) {
 
     try {
       const newTargets = await requestFreshTargetAssignment(conventionId, hunterId);
+      // Note: Code below resolve execution
+      try {
+        await updatePlayerLastRefresh(hunterId, new Date().toISOString());
+      } catch (err) {
+        console.error("%c[API] Post-resolve updatePlayerLastRefresh failed:", "color: #ef4444;", err);
+      }
       setCurrentTargets(newTargets);
     } catch (error) {
       console.error("%c[Handler] Error during target refresh:", "color: #ef4444; font-weight: bold;", error);

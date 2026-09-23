@@ -120,13 +120,6 @@ export async function requestFreshTargetAssignment(conventionId, appUid) {
     }
 
     resolve(newTargets);
-
-    // Note: Code below resolve execution
-    try {
-      await updatePlayerLastRefresh(appUid, new Date().toISOString());
-    } catch (err) {
-      console.error("%c[API] Post-resolve updatePlayerLastRefresh failed:", "color: #ef4444;", err);
-    }
   });
 }
 
