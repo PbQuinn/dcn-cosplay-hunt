@@ -736,11 +736,11 @@ function MissionBar({ hunter, score, photoUrl, onOpenProfile }) {
   );
 }
 
-function refreshPool( conventionId, hunterId, setCurrentTargets ) {
+function refreshPool(conventionId, hunterId, setCurrentTargets) {
   requestFreshTargetAssignment(
-                  convention.id,
-                  hunter?.app_uid
-                )
+    convention.id,
+    hunter?.app_uid
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -766,11 +766,16 @@ export default function HunterPage({ convention, hunter, targets }) {
   }
 
   async function handleTargetRefresh(conventionId, hunterId) {
-    setRefreshAll(null)
-    setCurrentTargets([])
-    const newTargets = await requestFreshTargetAssignment(conventionId, hunterId)
-    setCurrentTargets(newTargets); 
-  } 
+    setRefreshAll(null);
+    setCurrentTargets([]);
+
+    try {
+      const newTargets = await requestFreshTargetAssignment(conventionId, hunterId);
+      setCurrentTargets(newTargets);
+    } catch (error) {
+      console.error("%c[Handler] Error during target refresh:", "color: #ef4444; font-weight: bold;", error);
+    }
+  }
 
   const blanksCount = Math.max(0, NR_TARGETS - currentTargets.length);
   const displayTargets = [
@@ -889,12 +894,20 @@ export default function HunterPage({ convention, hunter, targets }) {
       )}
 
       {refreshAll && (
-        <Modal labelledBy="target-info-title" onClose={() => setRefreshAll(null)}>
-          <RefreshAllContent 
-          onClose={
-            () => setRefreshAll(null)
-          }
-          onConfirm={() => handleTargetRefresh(convention.id, hunter.app_uid)} />
+        <Modal
+          labelledBy="target-info-title"
+          onClose={() => {
+            setRefreshAll(null);
+          }}
+        >
+          <RefreshAllContent
+            onClose={() => {
+              setRefreshAll(null);
+            }}
+            onConfirm={() => {
+              handleTargetRefresh(convention.id, hunter.app_uid);
+            }}
+          />
         </Modal>
       )}
     </div>

@@ -121,3 +121,17 @@ export async function createPlayer(conventionId, formData) {
     }
 }
 
+export async function updatePlayerLastRefresh(playerUid, status) {
+  const { data, error } = await supabase
+    .from("players")
+    .update({ last_refresh: status })
+    .eq("app_uid", playerUid)
+    .select();
+
+  if (error) {
+    console.error("%c[DB] Supabase update failed:", "color: #ef4444; font-weight: bold;", error);
+    throw new Error(error.message);
+  }
+
+  return data;
+}

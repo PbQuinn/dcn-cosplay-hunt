@@ -35,7 +35,8 @@ create table if not exists players (
   score int not null,
   targets text,
   approved int not null,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  last_refresh timestamptz default null
 );
 
 create table if not exists captures (

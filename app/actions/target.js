@@ -3,6 +3,7 @@
 import { approvalStatuses, CAPTURE_REWARD, NR_TARGETS } from "@/lib/constants";
 import { supabase } from "@/lib/supabaseServer";
 import { stringFromTargetList, targetListFromString } from "@/lib/targetList";
+import { updatePlayerLastRefresh } from "./player";
 
 export async function updatePlayerApproval(target, status) {
 console.log(`Updating approval status for targetId: ${target.id} to status: ${status}`);
@@ -95,21 +96,38 @@ export async function requestNewTargetAssignment(conventionId, hunterId) {
 }
 
 export async function requestFreshTargetAssignment(conventionId, appUid) {
-  return new Promise ( async (resolve) => {
+  return new Promise(async (resolve) => {
     const { data, updateError } = await supabase
       .from("players")
       .update({ "targets": "" })
       .eq("convention_id", conventionId)
-      .eq("app_uid", appUid)
+      .eq("app_uid", appUid);
 
-      let newTargets = []
-      for (let i = 0; i < NR_TARGETS; i++) {
-          let { newTarget, targets, error } = await requestNewTargetAssignment(conventionId, appUid);
-          newTargets = targets
+    if (updateError) {
+      console.error("%c[API] Error resetting player targets in Supabase:", "color: #ef4444;", updateError);
+    }
+
+    let newTargets = [];
+
+    for (let i = 0; i < NR_TARGETS; i++) {
+      let { newTarget, targets, error } = await requestNewTargetAssignment(conventionId, appUid);
+
+      if (error) {
+        console.error(`[API] Error on iteration ${i + 1}:`, error);
       }
-      resolve(newTargets)
-  })
-  
+
+      newTargets = targets;
+    }
+
+    resolve(newTargets);
+
+    // Note: Code below resolve execution
+    try {
+      await updatePlayerLastRefresh(appUid, new Date().toISOString());
+    } catch (err) {
+      console.error("%c[API] Post-resolve updatePlayerLastRefresh failed:", "color: #ef4444;", err);
+    }
+  });
 }
 
 /* Returns the player-visible data for the targets of a given hunter */
