@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useAdminSession } from "@/lib/useAdminSession";
-import { approvalStatuses } from "@/lib/constants";
+import { approvalStatuses, REFRESH_PERIOD } from "@/lib/constants";
 import LeaderBoard from "../LeaderBoard";
 import { usePolling } from "@/lib/usePolling";
 import { loadCaptures } from "@/app/actions/target";
@@ -150,7 +150,7 @@ export default function ConventionDisplayPage({ convention }) {
     }, [conventionId, session]);
 
     // Poll loadAll every 5000ms (5s) only when session exists, otherwise pass null to pause
-    usePolling(loadAll, session ? 5000 : null);
+    usePolling(loadAll, session ? REFRESH_PERIOD * 1000 : null);
 
     if (loading || !session) {
         return (
