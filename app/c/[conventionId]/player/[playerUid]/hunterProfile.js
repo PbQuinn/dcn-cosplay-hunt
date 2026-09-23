@@ -406,7 +406,6 @@ export function TargetInfoContent({
     return null;
   }
 
-
   return (
     <div className="relative pt-1">
       <ModalCloseButton onClose={onClose} />
@@ -831,7 +830,8 @@ export default function HunterPage({ convention, hunter, targets }) {
   // Sync state if hunter prop updates externally
   useEffect(() => {
     if (hunter?.last_refresh) {
-      setLastRefreshTime(new Date(hunter.last_refresh).getTime());
+      const parsedTime = new Date(hunter.last_refresh).getTime();
+      setLastRefreshTime(parsedTime);
     }
   }, [hunter?.last_refresh]);
 
@@ -846,18 +846,22 @@ export default function HunterPage({ convention, hunter, targets }) {
       const now = Date.now();
       const nextAvailableTime = lastRefreshTime + REFRESH_COOLDOWN_MILLISECONDS;
       const diffMs = nextAvailableTime - now;
+      const computedSeconds = diffMs <= 0 ? 0 : Math.ceil(diffMs / 1000);
 
       if (diffMs <= 0) {
         setTimeLeftSeconds(0);
       } else {
-        setTimeLeftSeconds(Math.ceil(diffMs / 1000));
+        setTimeLeftSeconds(computedSeconds);
       }
     };
 
     calculateTimeLeft(); // Run immediately
+
     const interval = setInterval(calculateTimeLeft, 1000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+    };
   }, [lastRefreshTime]);
 
   // Helper to format remaining seconds as MM:SS
@@ -877,46 +881,45 @@ export default function HunterPage({ convention, hunter, targets }) {
   }
 
   useEffect(() => {
-  // Only start a timer if there is remaining cooldown time
-  if (timeLeftSeconds <= 0) return;
+    // Only start a timer if there is remaining cooldown time
+    if (timeLeftSeconds <= 0) return;
 
-  const interval = setInterval(() => {
-    setTimeLeftSeconds((prevTime) => {
-      if (prevTime <= 1) {
-        clearInterval(interval);
-        return 0; // Hits 0 and triggers automatic switch back to "Request new targets"
-      }
-      return prevTime - 1;
-    });
-  }, 1000);
+    const interval = setInterval(() => {
+      setTimeLeftSeconds((prevTime) => {
+        if (prevTime <= 1) {
+          clearInterval(interval);
+          return 0; // Hits 0 and triggers automatic switch back to "Request new targets"
+        }
+        return prevTime - 1;
+      });
+    }, 1000);
 
-  // Clean up timer on unmount or state change
-  return () => clearInterval(interval);
-}, [timeLeftSeconds]);
+    // Clean up timer on unmount or state change
+    return () => clearInterval(interval);
+  }, [timeLeftSeconds]);
 
   async function handleTargetRefresh(conventionId, hunterId) {
-  setRefreshAll(null);
-  setCurrentTargets([]);
+    setRefreshAll(null);
+    setCurrentTargets([]);
 
-  // Start the countdown timer immediately upon confirmation
-  setTimeLeftSeconds(REFRESH_COOLDOWN_MINUTES * 60);
+    const nowMs = Date.now();
+    setLastRefreshTime(nowMs);
 
-  try {
-    const newTargets = await requestFreshTargetAssignment(conventionId, hunterId);
-    
     try {
-      await updatePlayerLastRefresh(hunterId, new Date().toISOString());
-    } catch (err) {
-      console.error("%c[API] Post-resolve updatePlayerLastRefresh failed:", "color: #ef4444;", err);
+      const newTargets = await requestFreshTargetAssignment(conventionId, hunterId);
+
+      const nowIso = new Date().toISOString();
+      try {
+        await updatePlayerLastRefresh(hunterId, nowIso);
+      } catch (err) {
+        console.error("%c[API] Post-resolve updatePlayerLastRefresh failed:", "color: #ef4444;", err);
+      }
+
+      setCurrentTargets(newTargets);
+    } catch (error) {
+      console.error("%c[Handler] Error during target refresh:", "color: #ef4444; font-weight: bold;", error);
     }
-    
-    setCurrentTargets(newTargets);
-  } catch (error) {
-    console.error("%c[Handler] Error during target refresh:", "color: #ef4444; font-weight: bold;", error);
-    // Optional: Reset cooldown if the request fails completely
-    // setTimeLeftSeconds(0);
   }
-}
 
   const blanksCount = Math.max(0, NR_TARGETS - currentTargets.length);
   const displayTargets = [
