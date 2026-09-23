@@ -207,7 +207,6 @@ export default function CosplayHunt({ convention, hunter }) {
                 <img
                   src="https://hyzullnybsghptluvbrw.supabase.co/storage/v1/object/public/socials-icons/instagram.png"
                   alt="Follow us on Instagram!"
-                  fill
                   className="object-cover rounded-lg hover:opacity-80 transition-opacity"
                   style={{
                     display: 'block',
@@ -223,7 +222,6 @@ export default function CosplayHunt({ convention, hunter }) {
                 <img
                   src="https://hyzullnybsghptluvbrw.supabase.co/storage/v1/object/public/socials-icons/discord.png"
                   alt="Join our Discord server!"
-                  fill
                   className="object-cover rounded-lg hover:opacity-80 transition-opacity"
                   style={{
                     display: 'block',

@@ -4,6 +4,20 @@ import { approvalStatuses, CAPTURE_REWARD, NR_TARGETS } from "@/lib/constants";
 import { supabase } from "@/lib/supabaseServer";
 import { stringFromTargetList, targetListFromString } from "@/lib/targetList";
 
+// Load capture data
+export async function loadCaptures(conventionId) {
+  const { data: captures, error } = await supabase
+    .from("captures")
+    .select("*")
+    .eq("convention_id", conventionId);
+
+  if (error) {
+    console.error("Supabase Query Error:", error);
+  }
+
+  return captures;
+}
+
 export async function updatePlayerApproval(target, status) {
   const { data, error } = await supabase
     .from("players")

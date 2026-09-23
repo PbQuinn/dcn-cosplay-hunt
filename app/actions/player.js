@@ -8,6 +8,7 @@ import { NR_TARGETS } from "@/lib/constants";
 import { getNewTarget, requestNewTargetAssignment } from "./target";
 import { stringFromTargetList } from "@/lib/targetList";
 
+// Save player data
 export async function createPlayer(conventionId, formData) {
     const name = formData.get("name");
     const contact = formData.get("contact");
@@ -114,7 +115,7 @@ export async function createPlayer(conventionId, formData) {
             path: "/",
         });
 
-        
+
         let targetList = [];
         for (let i = 0; i < NR_TARGETS; i++) {
             let newTarget = await requestNewTargetAssignment(conventionId, appUid, targetList);
@@ -127,4 +128,33 @@ export async function createPlayer(conventionId, formData) {
         redirect(`/c/${conventionId}/player/${appUid}`);
     }
 }
+
+// Load player data
+export async function loadPlayers(conventionId) {
+    const { data: players, error } = await supabase
+        .from("players")
+        .select("*")
+        .eq("convention_id", conventionId);
+
+    if (error) {
+        console.error("Supabase Query Error:", error);
+    }
+
+    return players;
+}
+
+export async function loadPlayerFromUid(playerUid) {
+    const { data: player, error } = await supabase
+        .from("players")
+        .select("*")
+        .in("app_uid", playerUid);
+
+    if (error) {
+        console.error("Supabase Query Error:", error);
+    }
+
+    return player;
+}
+
+
 
