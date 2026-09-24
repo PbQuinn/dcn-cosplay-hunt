@@ -208,15 +208,29 @@ function TargetCard({ target, captured, onOpenInfo, onOpenCapture }) {
   const showImage = Boolean(target?.photoUrl) && !errored;
 
   const handleInfoClick = () => {
-    onOpenInfo(target?.app_uid);
+    if (typeof onOpenInfo === "function") {
+      onOpenInfo(target?.app_uid);
+    }
   };
 
-  const handleImageError = () => {
+  const handleImageError = (e) => {
+    console.error("%c[TargetCard Error] Failed to load image:", "color: #ef4444; font-weight: bold;", {
+      app_uid: target?.app_uid,
+      character: target?.character,
+      attemptedUrl: target?.photoUrl,
+      nativeEvent: e
+    });
     setErrored(true);
   };
 
   const handleCaptureClick = () => {
-    onOpenCapture(target);
+    if (captured) {
+      return;
+    }
+
+    if (typeof onOpenCapture === "function") {
+      onOpenCapture(target);
+    }
   };
 
   return (
@@ -280,27 +294,53 @@ function TargetCard({ target, captured, onOpenInfo, onOpenCapture }) {
   );
 }
 
-function RequestNewTargetCard({ conventionId, hunterId, onNewTargets, onNoCharFound }) {
+function RequestNewTargetCard({ conventionId, hunterId, currentTargetCount = 0, onNewTargets, onNoCharFound }) {
   const [status, setStatus] = useState("idle"); // idle | loading | error
 
-  async function requestNewTarget() {
+  async function requestNewTargets() {
     setStatus("loading");
     try {
-      const { newTarget, targets, error } = await requestNewTargetAssignment(
-        conventionId,
-        hunterId
-      );
+      const maxTargets = typeof NR_TARGETS !== "undefined" ? NR_TARGETS : 3;
+      let availableSlots = maxTargets - currentTargetCount;
 
-      if (newTarget) {
-        onNewTargets(targets);
-      } else {
+      if (availableSlots <= 0) {
+        onNoCharFound(true);
+        setStatus("idle");
+        return;
+      }
+
+      let latestTargets = [];
+      let addedAny = false;
+
+      // Request as many new targets as possible to fill remaining slots
+      while (availableSlots > 0) {
+        const { newTarget, targets, error } = await requestNewTargetAssignment(
+          conventionId,
+          hunterId
+        );
+
         if (error) {
           setStatus("error");
+          return;
+        }
+
+        if (newTarget) {
+          addedAny = true;
+          latestTargets = targets;
+          availableSlots--;
         } else {
-          onNoCharFound(true);
+          // No more eligible targets available in pool
+          break;
         }
       }
+
+      if (addedAny) {
+        onNewTargets(latestTargets);
+      } else {
+        onNoCharFound(true);
+      }
     } catch (e) {
+      console.error("[RequestNewTargetCard] Error requesting target assignments:", e);
       setStatus("error");
     } finally {
       setStatus("idle");
@@ -313,9 +353,9 @@ function RequestNewTargetCard({ conventionId, hunterId, onNewTargets, onNoCharFo
     <li className="flex w-[76vw] max-w-[320px] flex-none snap-center flex-col justify-between rounded-2xl border border-dashed border-parchment/20 bg-ink-light/40 p-2.5 transition hover:border-parchment/40">
       <button
         type="button"
-        onClick={requestNewTarget}
+        onClick={requestNewTargets}
         disabled={isLoading}
-        aria-label="Request new target"
+        aria-label="Request new targets"
         className="group relative flex aspect-[4/5] w-full cursor-pointer flex-col items-center justify-center rounded-xl border border-parchment/10 bg-ink/60 transition-all hover:bg-ink hover:border-flare/40 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60"
       >
         {/* Frame Corners */}
@@ -334,22 +374,22 @@ function RequestNewTargetCard({ conventionId, hunterId, onNewTargets, onNoCharFo
         </div>
 
         <span className="mt-4 font-mono text-xs uppercase tracking-wider text-parchment/60 group-hover:text-parchment">
-          {isLoading ? "Fetching target..." : "Request new target"}
+          {isLoading ? "Fetching targets..." : "Request new targets"}
         </span>
       </button>
 
       <div className="px-1 py-2 text-center">
         <h3 className="font-display text-xl leading-none tracking-wide text-parchment">
-          Request new target
+          Request new targets
         </h3>
         <p className="mt-1 font-body text-xs text-parchment/60">
-          Get assigned an additional cosplayer target
+          Fill all open target slots with available cosplayers
         </p>
       </div>
 
       <button
         type="button"
-        onClick={requestNewTarget}
+        onClick={requestNewTargets}
         disabled={isLoading}
         className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-flare py-3 font-body text-[14.5px] font-semibold text-ink transition hover:bg-flare-dim active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-flare/50 disabled:opacity-50"
       >
@@ -361,7 +401,7 @@ function RequestNewTargetCard({ conventionId, hunterId, onNewTargets, onNoCharFo
         ) : (
           <>
             <Plus size={17} strokeWidth={2.25} />
-            Request new target
+            Request new targets
           </>
         )}
       </button>
@@ -892,13 +932,6 @@ function MissionBar({ hunter, score, photoUrl, onOpenProfile }) {
   );
 }
 
-function refreshPool(conventionId, hunterId, setCurrentTargets) {
-  requestFreshTargetAssignment(
-    convention.id,
-    hunter?.app_uid
-  )
-}
-
 // ---------------------------------------------------------------------------
 // Page
 // ---------------------------------------------------------------------------
@@ -1016,6 +1049,10 @@ export default function HunterPage({ convention, hunter, targets }) {
   }, [timeLeftSeconds]);
 
   async function handleTargetRefresh(conventionId, hunterId) {
+    // Generate a short unique ID for this invocation to trace parallel or rapid consecutive calls
+    const requestId = Math.random().toString(36).substring(2, 8);
+
+    // Reset UI State
     setIsRefreshing(true);
     setRefreshAll(null);
     setCurrentTargets([]);
@@ -1025,20 +1062,22 @@ export default function HunterPage({ convention, hunter, targets }) {
 
     try {
       const newTargets = await requestFreshTargetAssignment(conventionId, hunterId);
-
       const nowIso = new Date().toISOString();
 
+      // Secondary non-blocking operation: Sync timestamp to backend
       try {
         await updatePlayerLastRefresh(hunterId, nowIso);
-
       } catch (err) {
         console.error("%c[API] Post-resolve updatePlayerLastRefresh failed:", "color: #ef4444; font-weight: bold;", err);
-        console.error("%c[API] Error context:", "color: #f87171;", { hunterId, nowIso });
+        console.error("%c[API] Error context:", "color: #f87171;", { hunterId, nowIso, requestId });
       }
+
+      // Set final targets in state
       setCurrentTargets(newTargets);
+
     } catch (error) {
       console.error("%c[Handler] Error during target refresh:", "color: #ef4444; font-weight: bold;", error);
-      console.error("%c[Handler] Failed with params:", "color: #f87171;", { conventionId, hunterId });
+      console.error("%c[Handler] Failed with params:", "color: #f87171;", { conventionId, hunterId, requestId });
     } finally {
       setIsRefreshing(false);
     }

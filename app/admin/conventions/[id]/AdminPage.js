@@ -10,8 +10,6 @@ import LeaderBoard from "./LeaderBoard";
 import { getConventionPlayerLists } from "@/app/actions/convention";
 
 export default function AdminDashboard({ convention }) {
-
-    console.log(convention)
   const conventionId = convention.id;
   const { session, loading } = useAdminSession();
   const [storedConvention, setConvention] = useState(null);

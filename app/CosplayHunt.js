@@ -55,8 +55,13 @@ export default function CosplayHunt({ convention, hunter }) {
   async function handleSubmit(e) {
     e.preventDefault();
 
+    const execId = Math.random().toString(36).substring(2, 9);
+    const startTime = performance.now();
+
+    const errorStyle = "color: #ef4444; font-weight: bold; background: #450a0a; padding: 2px 6px; border-radius: 4px;";
     setError("");
 
+    // Validation: Invisible vs Photo
     if (!form.invisible && !form.photo) {
       setError("Please upload a photo, or mark yourself as invisible.");
       return;
@@ -79,14 +84,23 @@ export default function CosplayHunt({ convention, hunter }) {
       }
 
       await createPlayer(convention.id, formData);
+
     } catch (err) {
       // Pass Next.js redirect control signals through
       if (isRedirectError(err)) {
         throw err;
       }
 
+      const duration = (performance.now() - startTime).toFixed(2);
       const errorMessage = err.message ?? "Something went wrong.";
-      console.error("[handleSubmit] Error occurred during form submission:", err);
+
+      console.error(`%c[handleSubmit:${execId}] Error occurred during form submission after ${duration}ms:`, errorStyle, err);
+      console.error(`[handleSubmit:${execId}] Error Stack / Details:`, {
+        message: err?.message,
+        name: err?.name,
+        stack: err?.stack
+      });
+
       setError(errorMessage);
       setSaving(false);
     }

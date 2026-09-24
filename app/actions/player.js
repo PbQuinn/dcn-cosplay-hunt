@@ -5,10 +5,12 @@ import { redirect } from "next/navigation";
 import { randomUUID } from "crypto";
 import { supabase } from "@/lib/supabaseServer";
 import { requestFreshTargetAssignment } from "./target";
-import { stringFromTargetList } from "@/lib/targetList";
 
 // Save player data
 export async function createPlayer(conventionId, formData) {
+    const reqId = Math.random().toString(36).substring(2, 9);
+    const errorStyle = "color: #ef4444; font-weight: bold; background: #450a0a; padding: 2px 6px; border-radius: 4px;";
+
     const name = formData.get("name");
     const contact = formData.get("contact");
     const description = formData.get("description");
@@ -17,41 +19,48 @@ export async function createPlayer(conventionId, formData) {
     const series = formData.get("series");
     const photo = formData.get("photo");
 
-    // Name is required
+    // Validation
     if (!name) {
+        console.error(`%c[createPlayer:${reqId}] Validation Failed: 'name' is missing`, errorStyle);
         throw new Error("Please fill in all required fields.");
     }
-    // Validate all fields for "null"
     if (!!name && name === null) {
+        console.error(`%c[createPlayer:${reqId}] Validation Failed: 'name' is explicit null string`, errorStyle);
         throw new Error("The entered name cannot be processed, please change it");
     }
     if (!!contact && contact === null) {
+        console.error(`%c[createPlayer:${reqId}] Validation Failed: 'contact' is explicit null string`, errorStyle);
         throw new Error("The entered contact cannot be processed, please change it, or leave it blank");
     }
     if (!!description && description === null) {
+        console.error(`%c[createPlayer:${reqId}] Validation Failed: 'description' is explicit null string`, errorStyle);
         throw new Error("The entered description be processed, please change it, or leave it blank");
     }
-    // If visible, all other fields are also required
     if (!invisible && (!(photo instanceof File) || !(character) && !(series))) {
+        console.error(`%c[createPlayer:${reqId}] Validation Failed: Visible player missing photo or character/series`, errorStyle, {
+            isPhotoFile: photo instanceof File,
+            character,
+            series
+        });
         throw new Error("Please fill in all required fields.");
     }
-    // If visible, also validate all fields for "null"
     if (!invisible && character === null) {
+        console.error(`%c[createPlayer:${reqId}] Validation Failed: 'character' is explicit null string`, errorStyle);
         throw new Error("The entered character name cannot be processed, please change it");
     }
     if (!invisible && series === null) {
+        console.error(`%c[createPlayer:${reqId}] Validation Failed: 'series' is explicit null string`, errorStyle);
         throw new Error("The entered series name cannot be processed, please change it");
     }
 
-    // Generate the player's permanent identifier on the server.
     const appUid = randomUUID();
     let photoPath = null;
 
     // Upload photo
     if (!invisible && photo instanceof File) {
-        const extension =
-            photo.name.split(".").pop()?.toLowerCase() || "jpg";
+        const uploadStartTime = performance.now();
 
+        const extension = photo.name.split(".").pop()?.toLowerCase() || "jpg";
         photoPath = `${appUid}.${extension}`;
 
         const arrayBuffer = await photo.arrayBuffer();
@@ -65,20 +74,20 @@ export async function createPlayer(conventionId, formData) {
                 upsert: false,
             });
 
+        const uploadDuration = (performance.now() - uploadStartTime).toFixed(2);
+
         if (uploadError) {
-            console.error(uploadError);
+            console.error(`%c[createPlayer:${reqId}] Photo Upload Failed (${uploadDuration}ms):`, errorStyle, uploadError);
             throw new Error("Could not upload photo.");
         }
     }
 
     const newRow = {
-        // Database fields
         convention_id: conventionId,
         app_uid: appUid,
         code: String(Math.ceil(Math.random() * 9999)).padStart(4, "0"),
-        targets: "", // Character is populated with targets only upon succesful creation
+        targets: "",
         created_at: new Date().toISOString(),
-        // User provided fields
         name: name.toString().trim() || "",
         contact: contact?.toString().trim() || "",
         character: character?.toString().trim() || "",
@@ -86,55 +95,61 @@ export async function createPlayer(conventionId, formData) {
         description: description?.toString().trim() || "",
         invisible,
         image_url: photoPath,
-    }
+    };
+
+    const dbStartTime = performance.now();
 
     const { error } = await supabase.from("players").insert(newRow);
+    const dbDuration = (performance.now() - dbStartTime).toFixed(2);
 
     if (error) {
+        console.error(`%c[createPlayer:${reqId}] DB Insert Failed (${dbDuration}ms):`, errorStyle, error);
+
         if (photoPath) {
-            await supabase.storage
+            const { error: removeError } = await supabase.storage
                 .from("hunter-photos")
                 .remove([photoPath]);
+
+            if (removeError) console.error(`%c[createPlayer:${reqId}] Rollback failed:`, errorStyle, removeError);
         }
-        console.error(error);
         throw new Error("Could not create your player.");
-    } else {
-
-        // Set a persistent cookie.
-        const cookieStore = await cookies();
-
-        cookieStore.set("hunter_app_uid", appUid, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "lax",
-
-            // 1 year
-            maxAge: 60 * 60 * 24 * 365,
-
-            path: "/",
-        });
-
-        await requestFreshTargetAssignment(conventionId, appUid);
-        
-
-        // Send the player directly to their page.
-        redirect(`/c/${conventionId}/player/${appUid}`);
     }
+
+    // Set persistent cookie
+    const cookieStore = await cookies();
+
+    cookieStore.set("hunter_app_uid", appUid, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 60 * 60 * 24 * 365,
+        path: "/",
+    });
+
+    // Initial target assignment
+    const freshAssignmentResult = await requestFreshTargetAssignment(conventionId, appUid);
+
+    const assignedTargets = Array.isArray(freshAssignmentResult)
+        ? freshAssignmentResult
+        : freshAssignmentResult?.targets || freshAssignmentResult?.data || [];
+
+    // Send the player directly to their page.
+    redirect(`/c/${conventionId}/player/${appUid}`);
 }
 
 export async function updatePlayerLastRefresh(playerUid, status) {
-  const { data, error } = await supabase
-    .from("players")
-    .update({ last_refresh: status })
-    .eq("app_uid", playerUid)
-    .select();
+    const { data, error } = await supabase
+        .from("players")
+        .update({ last_refresh: status })
+        .eq("app_uid", playerUid)
+        .select();
 
-  if (error) {
-    console.error("%c[DB] Supabase update failed:", "color: #ef4444; font-weight: bold;", error);
-    throw new Error(error.message);
-  }
+    if (error) {
+        console.error("%c[DB] Supabase update failed:", "color: #ef4444; font-weight: bold;", error);
+        throw new Error(error.message);
+    }
 
-  return data;
+    return data;
 }
 // Load player data
 export async function loadPlayers(conventionId) {

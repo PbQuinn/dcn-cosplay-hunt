@@ -108,28 +108,48 @@ export async function getHunterTargetIds(conventionId, hunterId) {
 // f9e13058-4acb-49fb-b494-869b7f291187 786f2e7b-1a12-4be9-a829-fde41cfbea72
 /* Request a new target */
 export async function requestNewTargetAssignment(conventionId, hunterId) {
+  const reqId = Math.random().toString(36).substring(2, 9);
+  const errorStyle = "color: #ef4444; font-weight: bold; background: #450a0a; padding: 2px 6px; border-radius: 4px;";
 
   let currentTargets = await getHunterTargetIds(conventionId, hunterId);
-  // Don't add a target if the player is already capped
 
-  if (currentTargets.length >= NR_TARGETS) return { newTarget: undefined, targets: currentTargets };
+  const targetCap = typeof NR_TARGETS !== "undefined" ? NR_TARGETS : 0;
+  if (currentTargets.length >= targetCap) {
+    return { newTarget: undefined, targets: currentTargets };
+  }
+
   const { newTarget, error } = await getNewTarget(conventionId, hunterId, currentTargets);
-  if (!newTarget) return { newTarget: undefined, targets: currentTargets, error: error }
+
+  if (!newTarget) {
+    return { newTarget: undefined, targets: currentTargets, error };
+  }
 
   currentTargets.push(newTarget);
   let targetListString = stringFromTargetList(currentTargets);
+
+  const updateStartTime = performance.now();
 
   const { data, updateError } = await supabase
     .from("players")
     .update({ "targets": targetListString })
     .eq("convention_id", conventionId)
-    .eq("app_uid", hunterId)
+    .eq("app_uid", hunterId);
 
-  return { newTarget: newTarget, targets: await getTargetProfiles(conventionId, hunterId), error: updateError }
+  const updateDuration = (performance.now() - updateStartTime).toFixed(2);
+
+  if (updateError) {
+    console.error(`%c[requestNewTargetAssignment:${reqId}] DB Target String Update Failed (${updateDuration}ms):`, errorStyle, updateError);
+  }
+
+  const fullProfiles = await getTargetProfiles(conventionId, hunterId);
+
+  return { newTarget: newTarget, targets: fullProfiles, error: updateError };
 }
 
 export async function requestFreshTargetAssignment(conventionId, appUid) {
-  // 1. Reset target string/array in Supabase
+  const errorStyle = "color: #ef4444; font-weight: bold; background: #450a0a; padding: 2px 6px; border-radius: 4px;";
+
+  // 1. Reset player target state
   const { error: updateError } = await supabase
     .from("players")
     .update({ targets: "" })
@@ -137,23 +157,47 @@ export async function requestFreshTargetAssignment(conventionId, appUid) {
     .eq("app_uid", appUid);
 
   if (updateError) {
-    console.error("%c[API] Error resetting player targets in Supabase:", "color: #ef4444;", updateError);
+    console.error("%c[API] Error resetting player targets in Supabase:", errorStyle, updateError);
   }
 
-  // 2. Request new targets concurrently
-  // Replace Promise.all with a sequential loop:
-  const assignments = [];
-  for (let i = 0; i < NR_TARGETS; i++) {
+  // 2. Request targets until limit is reached or pool is exhausted
+  const targetLimit = typeof NR_TARGETS !== "undefined" ? NR_TARGETS : 3;
+  let rawTargets = [];
+
+  for (let i = 0; i < targetLimit; i++) {
     const result = await requestNewTargetAssignment(conventionId, appUid);
-    assignments.push(result);
+
+    // Capture target state if returned
+    if (Array.isArray(result?.targets)) {
+      rawTargets = result.targets;
+    }
+
+    // Stop early if no new target could be assigned and no network error occurred
+    if (!result?.newTarget && !result?.error) {
+      break;
+    }
   }
 
-  // Extract the accumulated targets array from the last call response
-  const lastResult = assignments[assignments.length - 1];
-  const targetPlayers = lastResult?.targets || [];
+  // 3. Extract and sanitize target UUIDs
+  const targetIds = rawTargets
+    .map((t) => (typeof t === "object" && t !== null ? t.app_uid : t))
+    .filter(Boolean);
 
-  // Return the full player objects directly (no Step 3 query needed!)
-  return targetPlayers;
+  if (targetIds.length === 0) {
+    return [];
+  }
+
+  // 4. Fetch public target profile data via getTargetInformation
+  try {
+    const targetProfiles = await Promise.all(
+      targetIds.map((targetId) => getTargetInformation(targetId, conventionId))
+    );
+
+    return targetProfiles.filter(Boolean);
+  } catch (error) {
+    console.error("%c[API] Error fetching target profiles via getTargetInformation:", errorStyle, error);
+    return [];
+  }
 }
 
 /* Returns the player-visible data for the targets of a given hunter */
@@ -191,7 +235,7 @@ async function fetchPlayerRecord(conventionId, playerId, selectFields = "*") {
 // ----------------------------------------------------
 // PLAYER ACCESS (Public / Shielded)
 // ----------------------------------------------------
-export async function getTargetInformation(targetId, conventionId, hunterId) {
+export async function getTargetInformation(targetId, conventionId) {
   // TODO: validate that (hunterId, targetId) is an active hunter/target pair
   // for this convention before returning anything — right now any target ID
   // is resolved unconditionally.
