@@ -587,8 +587,8 @@ function CaptureContent({ conventionId, hunter, target, onClose, onSuccess }) {
         {target.character}
       </h2>
       <p className="font-body text-[13.5px] leading-relaxed text-parchment/60">
-        Ask {target.name ? target.name.split(" ")[0] : "the cosplayer"} for the
-        4-digit code on their badge and enter it below.
+        Ask {target.character ? target.character : "the cosplayer"} for their
+        4-digit code and enter it below to capture them.
       </p>
 
       <CodeDigitsInput

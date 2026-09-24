@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import Link from 'next/link'
 import { loadConventions } from "../actions/convention";
 import { useAdminSession } from "@/lib/useAdminSession";
+import { numberDate } from "@/lib/formatDate";
 
 export default function AdminPage({  }) {
     const { session, loading } = useAdminSession();
@@ -62,7 +63,6 @@ export default function AdminPage({  }) {
         <div>
             <div className="mb-8 flex items-center justify-between">
                 <div>
-                    <p className="eyebrow mb-3">Admin</p>
                     <h1 className="text-4xl font-bold">Conventions</h1>
                 </div>
                 <button className="btn-secondary" onClick={handleSignOut}>
@@ -88,7 +88,7 @@ export default function AdminPage({  }) {
                                 >
                                     {c.name}
                                     <span className="ml-2 font-mono text-xs text-parchment/40">
-                                        {c.start_date} – {c.end_date}
+                                        {numberDate(c.start_date)} – {numberDate(c.end_date)}
                                     </span>
                                 </Link>
                             </li>
