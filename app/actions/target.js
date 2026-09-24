@@ -3,7 +3,6 @@
 import { approvalStatuses, CAPTURE_REWARD, NR_TARGETS } from "@/lib/constants";
 import { supabase } from "@/lib/supabaseServer";
 import { stringFromTargetList, targetListFromString } from "@/lib/targetList";
-import { updatePlayerLastRefresh } from "./player";
 
 // Load capture data
 export async function loadCaptures(conventionId) {
@@ -31,8 +30,6 @@ export async function updatePlayerApproval(target, status) {
 }
 
 export async function updatePlayerVisibility(target, status) {
-console.log(`Updating visibility status for targetId: ${target.id} to status: ${status}`);
-
   const { data, error } = await supabase
     .from("players")
     .update({ invisible: status })
@@ -44,8 +41,6 @@ console.log(`Updating visibility status for targetId: ${target.id} to status: ${
 }
 
 export async function removePlayerPhoto(target) {
-console.log(`Removing photo for targetId: ${target.id}`);
-
   const { data, error } = await supabase
     .from("players")
     .update({ image_url: null })
@@ -146,18 +141,19 @@ export async function requestFreshTargetAssignment(conventionId, appUid) {
   }
 
   // 2. Request new targets concurrently
-  const assignments = await Promise.all(
-    Array.from({ length: NR_TARGETS }, () =>
-      requestNewTargetAssignment(conventionId, appUid)
-    )
-  );
+  // Replace Promise.all with a sequential loop:
+  const assignments = [];
+  for (let i = 0; i < NR_TARGETS; i++) {
+    const result = await requestNewTargetAssignment(conventionId, appUid);
+    assignments.push(result);
+  }
 
   // Extract the accumulated targets array from the last call response
   const lastResult = assignments[assignments.length - 1];
   const targetPlayers = lastResult?.targets || [];
 
   // Return the full player objects directly (no Step 3 query needed!)
-  return targetPlayers; 
+  return targetPlayers;
 }
 
 /* Returns the player-visible data for the targets of a given hunter */
@@ -287,8 +283,6 @@ export async function performCapture(conventionId, hunterId, targetId) {
     if (newTarget) {
       replacementTargetId = newTarget;
       currentTargets.push(newTarget);
-    } else if (newTargetError) {
-      console.warn("Could not assign replacement target:", newTargetError);
     }
   }
 
