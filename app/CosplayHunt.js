@@ -3,7 +3,8 @@
 // import { cookies } from "next/headers";
 import { useState, useEffect } from "react";
 import { createPlayer } from "@/app/actions/player";
-import Link from 'next/link'
+import Link from 'next/link';
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 
 export default function CosplayHunt({ convention, hunter }) {
   const [error, setError] = useState("");
@@ -79,7 +80,14 @@ export default function CosplayHunt({ convention, hunter }) {
 
       await createPlayer(convention.id, formData);
     } catch (err) {
-      setError(err.message ?? "Something went wrong.");
+      // Pass Next.js redirect control signals through
+      if (isRedirectError(err)) {
+        throw err;
+      }
+
+      const errorMessage = err.message ?? "Something went wrong.";
+      console.error("[handleSubmit] Error occurred during form submission:", err);
+      setError(errorMessage);
       setSaving(false);
     }
   }
