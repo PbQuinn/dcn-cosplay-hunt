@@ -8,6 +8,7 @@ import {
   Search, Plus,
   UserRound,
   ChevronRight,
+  Loader2
 } from "lucide-react";
 import {
   NR_TARGETS, REFRESH_COOLDOWN_MINUTES,

@@ -8,6 +8,11 @@ const nextConfig = {
       },
     ],
   },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '50mb', // adjust to whatever max photo size you want to allow
+    },
+  },
 };
 
 export default nextConfig;

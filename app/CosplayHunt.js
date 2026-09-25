@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { createPlayer } from "@/app/actions/player";
 import Link from 'next/link';
 import { isRedirectError } from "next/dist/client/components/redirect-error";
+import { MAX_PHOTO_MB } from "lib/constants"
 
 export default function CosplayHunt({ convention, hunter }) {
   const [error, setError] = useState("");
@@ -64,6 +65,13 @@ export default function CosplayHunt({ convention, hunter }) {
     // Validation: Invisible vs Photo
     if (!form.invisible && !form.photo) {
       setError("Please upload a photo, or mark yourself as invisible.");
+      return;
+    }
+    console.log(form.photo);
+
+    const max_size = MAX_PHOTO_MB * 1000000
+    if (!form.invisible && form.photo && form?.photo.size > max_size ) {
+      setError(`Your photo too large (${form.photo.size / 1000000} MB) and exceeds the maximum size (${MAX_PHOTO_MB} MB). Please upload a smaller photo. Tip: A simple way to reduce photo size quickly is to make a screenshot of it.`);
       return;
     }
 
