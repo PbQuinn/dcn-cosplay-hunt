@@ -175,7 +175,7 @@ export default function ConventionDisplayPage({ convention }) {
                     <p className="eyebrow mb-3 mt-6 text-xl">How to play</p>
                     <ol className="list-inside list-decimal space-y-0.1 text-center">
                         <li className="flex flex-col items-center">
-                            <span>Go to dynamocosplaynexus.nl/cosplay-hunt or scan the QR code:</span>
+                            <span>Go to <b>dynamocosplaynexus.nl</b> or scan the QR code:</span>
                             <img
                                 src="https://hyzullnybsghptluvbrw.supabase.co/storage/v1/object/public/dcn-branding/cosplay-hunt-qr.png"
                                 alt="Cosplay Hunt QR Code"
