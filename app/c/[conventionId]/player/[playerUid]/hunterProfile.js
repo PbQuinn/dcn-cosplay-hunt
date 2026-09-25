@@ -2,13 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
-  Camera,
-  X,
-  RefreshCcw,
-  Search,
+  Camera, Check,
+  X, CircleAlert,
+  RefreshCcw, CircleCheck,
+  Search, Plus,
   UserRound,
-  CircleCheck,
-  CircleAlert,
   ChevronRight,
 } from "lucide-react";
 import {
@@ -20,7 +18,6 @@ import {
   requestNewTargetAssignment, updatePlayerApproval
 } from "@/app/actions/target";
 import { updatePlayerLastRefresh } from "@/app/actions/player";
-import { Plus, Loader2 } from "lucide-react";
 
 function initialsFor(name) {
   if (!name) return "??";
@@ -152,7 +149,7 @@ function NoCharFoundModal({ onClose }) {
 // ---------------------------------------------------------------------------
 // 4-digit code entry
 // ---------------------------------------------------------------------------
-function CodeDigitsInput({ value, onChange, disabled, autoFocus }) {
+function CodeDigitsInput({ value, onChange, disabled, autoFocus, onSubmit }) {
   const refs = useRef([]);
 
   useEffect(() => {
@@ -169,7 +166,9 @@ function CodeDigitsInput({ value, onChange, disabled, autoFocus }) {
   }
 
   function handleKeyDown(i, e) {
-    if (e.key === "Backspace" && !value[i] && refs.current[i - 1]) {
+    if (e.key === "Enter" && onSubmit) {
+      onSubmit();
+    } else if (e.key === "Backspace" && !value[i] && refs.current[i - 1]) {
       refs.current[i - 1].focus();
     }
   }
@@ -552,18 +551,10 @@ export function TargetInfoContent({
             find them, ask for their 4-digit code to score points!
           </p>
 
-          <button
+          <CaptureButton
+            captured={captured}
             onClick={handleCaptureClick}
-            disabled={captured}
-            className={
-              captured
-                ? "flex w-full items-center justify-center gap-2 rounded-xl border border-sage bg-ink py-3 font-body text-[14.5px] font-semibold text-sage"
-                : "flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-flare py-3 font-body text-[14.5px] font-semibold text-ink transition hover:bg-flare-dim active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-flare/50 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-light"
-            }
-          >
-            <Camera size={17} strokeWidth={2.25} />
-            {captured ? "Logged" : "Capture"}
-          </button>
+          />
         </div>
 
       )}
@@ -604,6 +595,8 @@ function CaptureContent({ conventionId, hunter, target, onClose, onSuccess }) {
   const [status, setStatus] = useState("idle"); // idle | checking | success | error
 
   async function handleSubmit() {
+    if (code.length !== 4 || status === "checking" || status === "success") return;
+
     setStatus("checking");
     const correct = await checkPlayerCode(conventionId, target.app_uid, code);
     if (correct) {
@@ -617,11 +610,12 @@ function CaptureContent({ conventionId, hunter, target, onClose, onSuccess }) {
     }
   }
 
+  const isCaptured = status === "success";
+  const isDisabled = code.length !== 4 || status === "checking";
+
   return (
     <div className="relative pt-1">
-      <ModalCloseButton onClose={() => {
-        onClose();
-      }} />
+      <ModalCloseButton onClose={onClose} />
       <Eyebrow>Log a capture</Eyebrow>
       <h2 id="capture-title" className="mb-2 mt-0.5 font-display text-3xl text-parchment">
         {target.character}
@@ -637,6 +631,7 @@ function CaptureContent({ conventionId, hunter, target, onClose, onSuccess }) {
           setCode(v);
           if (status === "error") setStatus("idle");
         }}
+        onSubmit={handleSubmit}
         disabled={status === "checking" || status === "success"}
         autoFocus
       />
@@ -652,14 +647,49 @@ function CaptureContent({ conventionId, hunter, target, onClose, onSuccess }) {
         </p>
       )}
 
-      <button
+      <CaptureButton
+        captured={isCaptured}
+        disabled={isDisabled}
         onClick={handleSubmit}
-        disabled={code.length !== 4 || status === "checking" || status === "success"}
-        className="mt-5 w-full cursor-pointer rounded-xl bg-sage py-[15px] font-body text-[15px] font-bold text-ink disabled:cursor-default disabled:opacity-45 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage/50 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-light"
-      >
-        {status === "checking" ? "Checking…" : "Submit code"}
-      </button>
+        className="mt-5"
+      />
     </div>
+  );
+}
+
+function CaptureButton({
+  captured,
+  onClick,
+  disabled = false,
+  className = "",
+  label = "Capture",
+  capturedLabel = "Logged"
+}) {
+  const isCaptured = Boolean(captured);
+  const isDisabled = isCaptured || disabled;
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={isDisabled}
+      className={`flex w-full items-center justify-center gap-2 rounded-xl py-3 font-body text-[14.5px] font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-light ${isCaptured
+          ? "cursor-default border border-sage/40 bg-sage/10 text-sage opacity-90"
+          : "cursor-pointer bg-flare text-ink hover:bg-flare-dim active:scale-[0.98] focus-visible:ring-flare/50 disabled:cursor-default disabled:opacity-45"
+        } ${className}`}
+    >
+      {isCaptured ? (
+        <>
+          <Check size={17} strokeWidth={2.25} />
+          <span>{capturedLabel}</span>
+        </>
+      ) : (
+        <>
+          <Camera size={17} strokeWidth={2.25} />
+          <span>{label}</span>
+        </>
+      )}
+    </button>
   );
 }
 
@@ -1208,12 +1238,6 @@ export default function HunterPage({ convention, hunter, targets }) {
             onClose={() => setProfileOpen(false)}
             onPhotoDeleted={() => setHunterPhotoUrl(null)}
           />
-        </Modal>
-      )}
-
-      {infoTargetId && (
-        <Modal labelledBy="target-info-title" onClose={() => setInfoTargetId(null)}>
-          <TargetInfoContent target={currentTargets.find((t) => t?.app_uid === infoTargetId)} onClose={() => setInfoTargetId(null)} />
         </Modal>
       )}
 
