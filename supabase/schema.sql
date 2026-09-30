@@ -16,7 +16,8 @@ create table if not exists conventions (
   created_at timestamptz not null default now(),
   times text,
   venue text,
-  address text
+  address text,
+  stand_location text
 );
 
 create table if not exists players (

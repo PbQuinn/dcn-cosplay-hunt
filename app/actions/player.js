@@ -179,5 +179,18 @@ export async function loadPlayerFromUid(playerUid) {
     return player;
 }
 
+// Load player UID from recovery code
+export async function loadPlayerFromRecovery(recoveryCode) {
+    const { data: player, error } = await supabase
+        .from("players")
+        .select("app_uid")
+        .eq("recovery_code", recoveryCode)
+        .single();
 
+    if (error) {
+        console.error("Supabase Query Error:", error);
+    }
+
+    return player.app_uid;
+}
 
