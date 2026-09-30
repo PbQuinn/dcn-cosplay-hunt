@@ -1,10 +1,9 @@
 "use server";
 
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
 import { randomUUID } from "crypto";
 import { supabase } from "@/lib/supabaseServer";
 import { requestFreshTargetAssignment } from "./target";
+import { landPlayer } from "../landPlayer";
 
 // Save player data
 export async function createPlayer(conventionId, formData) {
@@ -116,17 +115,6 @@ export async function createPlayer(conventionId, formData) {
         throw new Error("Could not create your player.");
     }
 
-    // Set persistent cookie
-    const cookieStore = await cookies();
-
-    cookieStore.set("hunter_app_uid", appUid, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        maxAge: 60 * 60 * 24 * 365,
-        path: "/",
-    });
-
     // Initial target assignment
     const freshAssignmentResult = await requestFreshTargetAssignment(conventionId, appUid);
 
@@ -134,8 +122,8 @@ export async function createPlayer(conventionId, formData) {
         ? freshAssignmentResult
         : freshAssignmentResult?.targets || freshAssignmentResult?.data || [];
 
-    // Send the player directly to their page.
-    redirect(`/c/${conventionId}/player/${appUid}`);
+    // Perform landing operations on new player
+    await landPlayer(conventionId, appUid)
 }
 
 export async function updatePlayerLastRefresh(playerUid, status) {
