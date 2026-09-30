@@ -95,6 +95,7 @@ export async function createPlayer(conventionId, formData) {
         description: description?.toString().trim() || "",
         invisible,
         image_url: photoPath,
+        recovery_code: String(Math.ceil(Math.random() * 9999999999)).padStart(10, "0"),
     };
 
     const dbStartTime = performance.now();
