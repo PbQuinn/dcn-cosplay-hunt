@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { MAX_PHOTO_MB } from "lib/constants"
 import { landPlayer } from "./landPlayer";
+import { formatNumber } from "@/lib/formatNumber";
 
 export default function CosplayHunt({ convention, hunter }) {
   const [error, setError] = useState("");
@@ -118,22 +119,22 @@ export default function CosplayHunt({ convention, hunter }) {
 
   const handleRecoverySubmit = async (e) => {
     e.preventDefault();
-    if (!recoveryCode.trim()) return;
+
+    // Strip hyphens to get raw 10-digit code
+    const cleanCode = recoveryCode.replace(/\D/g, "");
+    if (!cleanCode) return;
 
     setSaving(true);
     setError("");
 
     try {
-      const playerUid = await loadPlayerFromRecovery(recoveryCode);
+      const playerUid = await loadPlayerFromRecovery(cleanCode);
       await landPlayer(convention.id, playerUid);
 
-      // Close modal & reset field on success
       setShowRecoveryModal(false);
       setRecoveryCode("");
     } catch (err) {
-      if (isRedirectError(err)) {
-        throw err;
-      }
+      if (isRedirectError(err)) throw err;
       console.error("Recovery failed:", err);
       setError(err?.message ?? "Invalid recovery code.");
     } finally {
@@ -573,9 +574,10 @@ export default function CosplayHunt({ convention, hunter }) {
                   id="recoveryCode"
                   type="text"
                   required
-                  placeholder="e.g. 7502332991"
+                  maxLength={12}
+                  placeholder={`e.g. ${formatNumber("7502332991")}`}
                   value={recoveryCode}
-                  onChange={(e) => setRecoveryCode(e.target.value)}
+                  onChange={(e) => setRecoveryCode(formatNumber(e.target.value))}
                   className="field-input"
                 />
               </div>
