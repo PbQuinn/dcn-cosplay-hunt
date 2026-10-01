@@ -4,7 +4,7 @@ import { randomUUID } from "crypto";
 import { supabase } from "@/lib/supabaseServer";
 import { requestFreshTargetAssignment } from "./target";
 import { landPlayer } from "../landPlayer";
-import { generateSeededRecoveryCode } from "./seededGeneration";
+import { generateSeededRecoveryCode } from "@/lib/seededGeneration";
 
 // Save player data
 export async function createPlayer(conventionId, formData) {
