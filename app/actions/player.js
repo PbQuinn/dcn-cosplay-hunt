@@ -4,6 +4,7 @@ import { randomUUID } from "crypto";
 import { supabase } from "@/lib/supabaseServer";
 import { requestFreshTargetAssignment } from "./target";
 import { landPlayer } from "../landPlayer";
+import { generateSeededRecoveryCode } from "./seededGeneration";
 
 // Save player data
 export async function createPlayer(conventionId, formData) {
@@ -52,7 +53,12 @@ export async function createPlayer(conventionId, formData) {
         throw new Error("The entered series name cannot be processed, please change it");
     }
 
+    // Generate player appUid
     const appUid = randomUUID();
+
+    // Generate unique 10-digit recovery code seeded from appUid
+    const recoveryCode = generateSeededRecoveryCode(appUid);
+
     let photoPath = null;
 
     // Upload photo
@@ -94,7 +100,7 @@ export async function createPlayer(conventionId, formData) {
         description: description?.toString().trim() || "",
         invisible,
         image_url: photoPath,
-        recovery_code: String(Math.ceil(Math.random() * 9999999999)).padStart(10, "0"),
+        recovery_code: recoveryCode,
     };
 
     const dbStartTime = performance.now();
