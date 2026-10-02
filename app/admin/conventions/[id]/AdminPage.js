@@ -48,7 +48,7 @@ export default function AdminDashboard({ convention }) {
   return (
     <div>
       {/* Back Button Wrapper */}
-      <div className="mb-8">
+      <div className="mt-4 mb-8">
         <Link href="/admin">
           <button type="button" className="btn-primary">
             ← Back to dashboard
@@ -82,7 +82,7 @@ export default function AdminDashboard({ convention }) {
       )}
 
       {/* Display view */}
-      <div className="mb-4">
+      <div className="mt-10 mb-4">
         <Link href={`/admin/conventions/${conventionId}/display`}>
           <button type="button" className="btn-primary">
             Switch to Display view
