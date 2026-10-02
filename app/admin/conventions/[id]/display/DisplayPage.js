@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 import Link from "next/link";
 import { useAdminSession } from "@/lib/useAdminSession";
 import { approvalStatuses, REFRESH_PERIOD } from "@/lib/constants";
@@ -160,16 +160,16 @@ export default function ConventionDisplayPage({ convention }) {
     }
 
     return (
-        <div className="h-screen w-screen overflow-hidden p-[4vh_4vw]">
-            {/* Title bumped from text-4xl to text-6xl */}
-            <p className="eyebrow mb-2 mt-1 text-center text-6xl font-black">Cosplay Hunt</p>
+        <div className="flex h-screen w-screen flex-col overflow-hidden p-[4vh_4vw]">
+            {/* Main Title */}
+            <p className="eyebrow mb-2 shrink-0 text-center text-6xl font-black">Cosplay Hunt</p>
 
-            <div className="grid h-full grid-cols-2 gap-0">
+            <div className="grid flex-1 min-h-0 grid-cols-2 gap-0">
                 {/* Left Column */}
-                <section className="flex h-full flex-col items-center justify-center border-r border-gray-700 pr-10 text-center">
-                    {/* Section heading bumped from text-xl to text-3xl */}
-                    <p className="eyebrow mb-4 text-3xl font-bold">Leaderboard</p>
-                    <div className="w-full text-lg">
+                <section className="flex h-full flex-col items-center border-r border-gray-700 pr-10 text-center">
+                    <p className="eyebrow mb-2 shrink-0 text-3xl font-bold">Leaderboard</p>
+
+                    <div className="w-full shrink-0 text-lg">
                         <LeaderBoard
                             leaderBoard={leaderBoard}
                             displayAmount={10}
@@ -178,22 +178,33 @@ export default function ConventionDisplayPage({ convention }) {
                         />
                     </div>
 
-                    <p className="eyebrow mb-3 mt-6 text-3xl font-bold">How to play</p>
-                    {/* List item text bumped from base to text-lg / text-xl */}
-                    <ol className="list-inside list-decimal space-y-1 text-center text-lg">
-                        <li className="flex flex-col items-center">
-                            <span>Go to <b className="text-xl">dynamocosplaynexus.nl</b> or scan the QR code:</span>
-                            <img
-                                src="https://hyzullnybsghptluvbrw.supabase.co/storage/v1/object/public/dcn-branding/cosplay-hunt-qr.png"
-                                alt="Cosplay Hunt QR Code"
-                                className="mt-2 h-44 w-44 rounded-lg object-contain"
-                            />
-                        </li>
-                        <li>Upload your selfie</li>
-                        <li>Look for your targets</li>
-                        <li>Enter their code</li>
-                        <li>Score points</li>
-                    </ol>
+                    <div className="mt-4">
+                        <p className="eyebrow mb-1 shrink-0 text-3xl font-bold">How to play</p>
+
+                        <div className="grid w-full min-h-0 grid-cols-2 gap-0 items-start">
+                            {/* QR Code Container */}
+                            <section className="flex h-full w-full items-center justify-center p-1 text-center overflow-hidden">
+                                <img
+                                    src="https://hyzullnybsghptluvbrw.supabase.co/storage/v1/object/public/dcn-branding/cosplay-hunt-qr.png"
+                                    alt="Cosplay Hunt QR Code"
+                                    className="max-h-full max-w-full rounded-lg object-contain"
+                                />
+                            </section>
+
+                            {/* Instructions Container */}
+                            <section className="flex h-full flex-col items-center justify-center py-2 text-center">
+                                <ol className="list-inside list-decimal space-y-3 text-center text-2xl font-medium leading-snug">
+                                    <li>
+                                        <span>Go to <b className="text-3xl font-extrabold">dynamocosplaynexus.nl</b><br />or scan the QR code</span>
+                                    </li>
+                                    <li>Upload your selfie</li>
+                                    <li>Look for your targets</li>
+                                    <li>Enter their code</li>
+                                    <li>Score points</li>
+                                </ol>
+                            </section>
+                        </div>
+                    </div>
                 </section>
 
                 {/* Right Column */}
@@ -222,7 +233,7 @@ export default function ConventionDisplayPage({ convention }) {
                                         {/* Hunter */}
                                         <PlayerCard player={hunter} conventionId={conventionId} />
 
-                                        {/* Middle Capture Badge bumped from text-sm to text-base/text-sm */}
+                                        {/* Middle Capture Badge */}
                                         <div className="flex flex-col items-center font-mono text-base font-bold uppercase text-parchment/50">
                                             <span>has captured</span>
                                             <span className="mt-1 text-sm normal-case tracking-normal opacity-90">
@@ -239,7 +250,7 @@ export default function ConventionDisplayPage({ convention }) {
                     </div>
                 </section>
 
-                {/* Return Link bumped from text-xs to text-sm */}
+                {/* Return Link */}
                 <Link
                     href={`/admin/conventions/${conventionId}`}
                     className="absolute bottom-6 left-6 font-mono text-sm text-parchment/50 transition-colors hover:text-parchment"
