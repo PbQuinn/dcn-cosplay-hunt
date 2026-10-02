@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabaseServer";
 import { requestFreshTargetAssignment } from "./target";
 import { landPlayer } from "../landPlayer";
 import { generateSeededRecoveryCode } from "@/lib/seededGeneration";
+import { approvalStatuses } from "@/lib/constants";
 
 // Save player data
 export async function createPlayer(conventionId, formData) {
@@ -188,3 +189,10 @@ export async function loadPlayerFromRecovery(recoveryCode) {
     return player.app_uid;
 }
 
+export async function loadPlayerLists(conventionId) {
+    return await Promise.all([
+        supabase.from("players").select("*").eq("convention_id", conventionId).eq("approved", approvalStatuses.PENDING).order("created_at", { ascending: false }),
+        supabase.from("players").select("*").eq("convention_id", conventionId).order("invisible", { ascending: true }).order("created_at", { ascending: false }),
+        supabase.from("players").select("*").eq("convention_id", conventionId).eq("approved", approvalStatuses.APPROVED).order("score", { ascending: false }),
+    ]);
+}
