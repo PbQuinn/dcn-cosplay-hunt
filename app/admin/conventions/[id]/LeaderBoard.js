@@ -1,6 +1,6 @@
 "use client";
 
-export default function LeaderBoard({ leaderBoard = [], displayAmount }) {
+export default function LeaderBoard({ leaderBoard = [], displayAmount, onSelectPlayer }) {
   // Determine total rows to show: either displayAmount or the actual data length
   const totalRows = displayAmount ? displayAmount : leaderBoard.length;
 
@@ -17,9 +17,17 @@ export default function LeaderBoard({ leaderBoard = [], displayAmount }) {
     <ul className="card-shell max-h-96 space-y-2 overflow-y-auto bg-parchment/5">
       {rows.map((entry, index) => {
         const rank = index + 1;
+        const isClickable = Boolean(entry && onSelectPlayer);
 
         return (
-          <li key={entry?.id ?? `placeholder-${rank}`} className="flex items-baseline gap-2 text-sm">
+          <li
+            key={entry?.id ?? `placeholder-${rank}`}
+            onClick={() => isClickable && onSelectPlayer(entry)}
+            className={`flex items-baseline gap-2 text-sm transition-colors ${isClickable
+                ? "cursor-pointer hover:bg-parchment/10 rounded-lg p-1.5 -mx-1.5"
+                : ""
+              }`}
+          >
             {/* Rank & Name as Character (or empty placeholder rank) */}
             <span className="shrink-0 font-mono">
               <span className="font-bold text-flare">{rank}.</span>{" "}
@@ -37,7 +45,7 @@ export default function LeaderBoard({ leaderBoard = [], displayAmount }) {
             <span className="mb-1 flex-1 border-b border-dotted border-parchment/30" />
 
             {/* Score */}
-            <span className="shrink-0 font-mono text-xs text-parchment/80 font-extrabold text-flare">
+            <span className="shrink-0 font-mono text-xs font-extrabold text-flare">
               {entry ? entry.score : 0}
             </span>
           </li>

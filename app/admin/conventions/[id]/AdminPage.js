@@ -7,6 +7,7 @@ import { usePolling } from "@/lib/usePolling";
 import { SubmissionList, ApprovalList } from "./PlayerLists";
 import LeaderBoard from "./LeaderBoard";
 import { loadPlayerLists } from "@/app/actions/player";
+import { Modal, TargetInfoContent } from "@/app/c/[conventionId]/player/[playerUid]/hunterProfile";
 
 export default function AdminDashboard({ convention }) {
   const conventionId = convention.id;
@@ -15,6 +16,7 @@ export default function AdminDashboard({ convention }) {
   const [submissions, setSubmissions] = useState([]);
   const [approval, setApproval] = useState([]);
   const [tab, setTab] = useState("approval");
+  const [selectedTarget, setSelectedTarget] = useState(null);
 
   const loadAll = useCallback(async () => {
     // Prevent fetching if session/conventionId aren't ready
@@ -72,7 +74,12 @@ export default function AdminDashboard({ convention }) {
 
       {tab === "approval" && <ApprovalList submissions={approval} />}
       {tab === "submissions" && <SubmissionList submissions={submissions} />}
-      {tab === "leaderboard" && <LeaderBoard leaderBoard={leaderBoard} />}
+      {tab === "leaderboard" && (
+        <LeaderBoard
+          leaderBoard={leaderBoard}
+          onSelectPlayer={(player) => setSelectedTarget(player)}
+        />
+      )}
 
       {/* Display view */}
       <div className="mb-4">
@@ -82,6 +89,20 @@ export default function AdminDashboard({ convention }) {
           </button>
         </Link>
       </div>
+
+      {/* Target Info Modal for Admin */}
+      {selectedTarget && (
+        <Modal labelledBy="target-info-title" onClose={() => setSelectedTarget(null)}>
+          <TargetInfoContent
+            target={selectedTarget}
+            onClose={() => setSelectedTarget(null)}
+            isAdmin={true}
+            onUpdateTarget={(updatedPlayer) => {
+              setSelectedTarget(updatedPlayer);
+            }}
+          />
+        </Modal>
+      )}
     </div>
   );
 
