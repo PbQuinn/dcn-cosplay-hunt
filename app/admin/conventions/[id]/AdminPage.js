@@ -2,17 +2,15 @@
 
 import { useState, useCallback } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabaseClient";
 import { useAdminSession } from "@/lib/useAdminSession";
 import { usePolling } from "@/lib/usePolling";
 import { SubmissionList, ApprovalList } from "./PlayerLists";
 import LeaderBoard from "./LeaderBoard";
-import { getConventionPlayerLists } from "@/app/actions/convention";
+import { loadPlayerLists } from "@/app/actions/player";
 
 export default function AdminDashboard({ convention }) {
   const conventionId = convention.id;
   const { session, loading } = useAdminSession();
-  const [storedConvention, setConvention] = useState(null);
   const [leaderBoard, setLeaderBoard] = useState([]);
   const [submissions, setSubmissions] = useState([]);
   const [approval, setApproval] = useState([]);
@@ -21,9 +19,8 @@ export default function AdminDashboard({ convention }) {
   const loadAll = useCallback(async () => {
     // Prevent fetching if session/conventionId aren't ready
 
-    const [{ data: leaderboard }, { data: subs }, { data: apps }] = await getConventionPlayerLists(convention.id)
+    const [{ data: apps }, { data: subs }, { data: leaderboard }] = await loadPlayerLists(conventionId)
 
-    setConvention(convention ?? null);
     setLeaderBoard(leaderboard ?? []);
     setSubmissions(subs ?? []);
     setApproval(apps ?? []);
@@ -79,7 +76,7 @@ export default function AdminDashboard({ convention }) {
 
       {/* Display view */}
       <div className="mb-4">
-        <Link href={`/admin/conventions/${convention.id}/display`}>
+        <Link href={`/admin/conventions/${conventionId}/display`}>
           <button type="button" className="btn-primary">
             Switch to Display view
           </button>
