@@ -2,15 +2,19 @@
 
 // import { cookies } from "next/headers";
 import { useState, useEffect } from "react";
-import { createPlayer } from "@/app/actions/player";
+import { createPlayer, loadPlayerFromRecovery } from "@/app/actions/player";
 import Link from 'next/link';
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { MAX_PHOTO_MB } from "lib/constants"
+import { landPlayer } from "./landPlayer";
+import { formatNumber } from "@/lib/formatNumber";
 
 export default function CosplayHunt({ convention, hunter }) {
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showRecoveryModal, setShowRecoveryModal] = useState(false);
+  const [recoveryCode, setRecoveryCode] = useState("");
 
   const [form, setForm] = useState({
     name: "",
@@ -67,10 +71,9 @@ export default function CosplayHunt({ convention, hunter }) {
       setError("Please upload a photo, or mark yourself as invisible.");
       return;
     }
-    console.log(form.photo);
 
     const max_size = MAX_PHOTO_MB * 1000000
-    if (!form.invisible && form.photo && form?.photo.size > max_size ) {
+    if (!form.invisible && form.photo && form?.photo.size > max_size) {
       setError(`Your photo too large (${form.photo.size / 1000000} MB) and exceeds the maximum size (${MAX_PHOTO_MB} MB). Please upload a smaller photo. Tip: A simple way to reduce photo size quickly is to make a screenshot of it.`);
       return;
     }
@@ -113,6 +116,31 @@ export default function CosplayHunt({ convention, hunter }) {
       setSaving(false);
     }
   }
+
+  const handleRecoverySubmit = async (e) => {
+    e.preventDefault();
+
+    // Strip hyphens to get raw 10-digit code
+    const cleanCode = recoveryCode.replace(/\D/g, "");
+    if (!cleanCode) return;
+
+    setSaving(true);
+    setError("");
+
+    try {
+      const playerUid = await loadPlayerFromRecovery(cleanCode);
+      await landPlayer(convention.id, playerUid);
+
+      setShowRecoveryModal(false);
+      setRecoveryCode("");
+    } catch (err) {
+      if (isRedirectError(err)) throw err;
+      console.error("Recovery failed:", err);
+      setError(err?.message ?? "Invalid recovery code.");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <main className="min-h-screen">
@@ -158,13 +186,26 @@ export default function CosplayHunt({ convention, hunter }) {
             Find the characters. Meet the cosplayers. Complete the hunt.
           </p>
 
-          {!!!hunter && <button
-            type="button"
-            className="btn-primary mt-10 px-8 py-4 text-lg"
-            onClick={() => setShowModal(true)}
-          >
-            Join The Game
-          </button>}
+          {!!!hunter && <div className="flex flex-col items-center">
+            <button
+              type="button"
+              className="btn-primary mt-10 px-8 py-4 text-lg"
+              onClick={() => setShowModal(true)}
+            >
+              Join The Game
+            </button>
+
+            <p className="mx-auto mt-4 max-w-2xl text-sm text-gray-500">
+              Lost your account? Go to the DCN stand{convention?.stand_location && ` (${convention.stand_location})`} and{" "}
+              <button
+                type="button"
+                className="text-primary underline hover:opacity-80"
+                onClick={() => setShowRecoveryModal(true)}
+              >
+                click here
+              </button>!
+            </p>
+          </div>}
           {!!hunter && <div style={{ display: "flex flex-col items-center" }}>
             <p className="mx-auto mt-6 max-w-2xl text-lg text-parchment/70 sm:text-xl">
               Welcome back, {hunter.name}
@@ -492,6 +533,76 @@ export default function CosplayHunt({ convention, hunter }) {
           </div>
         )
       }
+
+      {/* Account Recovery Modal */}
+      {showRecoveryModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowRecoveryModal(false);
+            }
+          }}
+        >
+          <div className="relative max-h-[90vh] w-full max-w-md overflow-y-auto rounded-xl bg-black p-6 shadow-2xl sm:p-8">
+            {/* Close button */}
+            <button
+              type="button"
+              className="absolute right-5 top-5 text-2xl text-parchment/50 transition hover:text-parchment"
+              onClick={() => setShowRecoveryModal(false)}
+              aria-label="Close"
+            >
+              ×
+            </button>
+
+            <div className="mb-6 pr-8">
+              <p className="eyebrow mb-2">Account Recovery</p>
+              <h2 className="font-display text-3xl font-bold">
+                Enter recovery code
+              </h2>
+            </div>
+
+            <form onSubmit={handleRecoverySubmit} className="space-y-6">
+              <div>
+                <label
+                  htmlFor="recoveryCode"
+                  className="eyebrow mb-2 block"
+                >
+                  Recovery Code
+                </label>
+                <input
+                  id="recoveryCode"
+                  type="text"
+                  required
+                  maxLength={12}
+                  placeholder={`e.g. ${formatNumber("7502332991")}`}
+                  value={recoveryCode}
+                  onChange={(e) => setRecoveryCode(formatNumber(e.target.value))}
+                  className="field-input"
+                />
+              </div>
+
+              {/* Action Buttons in Bottom Right */}
+              <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => setShowRecoveryModal(false)}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="btn-primary"
+                >
+                  Submit
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </main >
   );
 }

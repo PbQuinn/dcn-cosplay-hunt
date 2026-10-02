@@ -19,6 +19,7 @@ import {
   requestNewTargetAssignment, updatePlayerApproval
 } from "@/app/actions/target";
 import { updatePlayerLastRefresh } from "@/app/actions/player";
+import { formatNumber } from "@/lib/formatNumber";
 
 function initialsFor(name) {
   if (!name) return "??";
@@ -418,7 +419,8 @@ export function TargetInfoContent({
   isAdmin = false,
   closeOnAction = false,
   captured = false,
-  onOpenCapture
+  onOpenCapture,
+  onUpdateTarget,
 }) {
   const [errored, setErrored] = useState(false);
   const [currentApprovedStatus, setCurrentApprovedStatus] = useState(target?.approved);
@@ -438,6 +440,7 @@ export function TargetInfoContent({
     }
 
     setIsUpdating(true);
+
     try {
       const data = await updatePlayerApproval(target, status);
 
@@ -465,14 +468,20 @@ export function TargetInfoContent({
 
   return (
     <div className="relative pt-1">
-      <ModalCloseButton onClose={onClose} />
+      <ModalCloseButton
+        onClose={() => {
+          onClose();
+        }}
+      />
 
       <div className="mb-4 flex aspect-[16/11] w-full items-center justify-center overflow-hidden rounded-2xl bg-ink">
         {showImage ? (
           <img
             src={target.photoUrl}
             alt={target.character || "Target"}
-            onError={() => setErrored(true)}
+            onError={() => {
+              setErrored(true);
+            }}
             className="h-full w-full object-cover object-center"
             style={{
               display: "flex",
@@ -519,6 +528,10 @@ export function TargetInfoContent({
               label="Approval"
               value={approvalStatusLabels[currentApprovedStatus] || "-"}
             />
+            <DetailRow
+              label="Recovery code"
+              value={target?.recovery_code ? formatNumber(target.recovery_code) : "-"}
+            />
           </dl>
 
           {/* Approval Buttons */}
@@ -526,7 +539,9 @@ export function TargetInfoContent({
             <button
               type="button"
               disabled={isUpdating}
-              onClick={() => updateApprovalStatus(approvalStatuses.REJECTED)}
+              onClick={() => {
+                updateApprovalStatus(approvalStatuses.REJECTED);
+              }}
               className="flex-1 cursor-pointer rounded-xl border border-flare/30 bg-flare/10 px-4 py-2.5 font-body text-sm font-semibold text-flare transition-all hover:bg-flare hover:text-ink active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-flare/50"
             >
               Reject
@@ -535,7 +550,9 @@ export function TargetInfoContent({
             <button
               type="button"
               disabled={isUpdating}
-              onClick={() => updateApprovalStatus(approvalStatuses.APPROVED)}
+              onClick={() => {
+                updateApprovalStatus(approvalStatuses.APPROVED);
+              }}
               className="flex-1 cursor-pointer rounded-xl bg-sage px-4 py-2.5 font-body text-sm font-bold text-ink transition-all hover:bg-sage/90 hover:shadow-lg hover:shadow-sage/10 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage/50"
             >
               Approve
@@ -557,7 +574,6 @@ export function TargetInfoContent({
             onClick={handleCaptureClick}
           />
         </div>
-
       )}
     </div>
   );
@@ -675,8 +691,8 @@ function CaptureButton({
       onClick={onClick}
       disabled={isDisabled}
       className={`flex w-full items-center justify-center gap-2 rounded-xl py-3 font-body text-[14.5px] font-semibold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-ink-light ${isCaptured
-          ? "cursor-default border border-sage/40 bg-sage/10 text-sage opacity-90"
-          : "cursor-pointer bg-flare text-ink hover:bg-flare-dim active:scale-[0.98] focus-visible:ring-flare/50 disabled:cursor-default disabled:opacity-45"
+        ? "cursor-default border border-sage/40 bg-sage/10 text-sage opacity-90"
+        : "cursor-pointer bg-flare text-ink hover:bg-flare-dim active:scale-[0.98] focus-visible:ring-flare/50 disabled:cursor-default disabled:opacity-45"
         } ${className}`}
     >
       {isCaptured ? (
