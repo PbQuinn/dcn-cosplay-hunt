@@ -1,6 +1,5 @@
 "use client";
 
-// import { cookies } from "next/headers";
 import { useState, useEffect } from "react";
 import Link from 'next/link'
 import { loadConventions } from "../actions/convention";

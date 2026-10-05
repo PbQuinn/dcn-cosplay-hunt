@@ -7,6 +7,7 @@ import { initialsFor } from "../utils/hunterUtils";
 import { approvalStatusLabels, approvalStatuses } from "@/lib/constants";
 import { updatePlayerApproval } from "@/app/actions/target";
 import { CaptureButton } from "./CaptureModal";
+import { DetailRow } from "../ui/DetailedRow";
 
 // ---------------------------------------------------------------------------
 // Modal contents
@@ -17,7 +18,8 @@ export function TargetInfoContent({
     isAdmin = false,
     closeOnAction = false,
     captured = false,
-    onOpenCapture
+    onOpenCapture,
+    onUpdateTarget
 }) {
     const [errored, setErrored] = useState(false);
     const [currentApprovedStatus, setCurrentApprovedStatus] = useState(target?.approved);

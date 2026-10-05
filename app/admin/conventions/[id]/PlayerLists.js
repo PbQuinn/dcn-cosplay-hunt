@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Modal, TargetInfoContent } from "@/app/c/[conventionId]/player/[playerUid]/hunterProfile";
 import { approvalStatusLabels } from "@/lib/constants";
 import { formatDateTime } from "@/lib/formatDateTime";
+import { Modal } from "@/app/c/[conventionId]/player/[playerUid]/components/ui/Modal";
+import { TargetInfoContent } from "@/app/c/[conventionId]/player/[playerUid]/components/modals/TargetInfoModal";
 
 // Helper to construct full target object with computed photo URL
 function normalizeTarget(item) {
