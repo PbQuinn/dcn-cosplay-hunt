@@ -1,7 +1,7 @@
 "use client";
 
 import { UserRound, ChevronRight } from "lucide-react";
-import { Avatar } from "./ui/Avatar";
+import Avatar from "./ui/Avatar";
 
 // ---------------------------------------------------------------------------
 // Top mission bar
