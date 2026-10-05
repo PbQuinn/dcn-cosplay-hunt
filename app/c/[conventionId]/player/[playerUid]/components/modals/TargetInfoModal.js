@@ -40,7 +40,7 @@ export function TargetInfoContent({
 
         setIsUpdating(true);
         try {
-            const data = await updatePlayerApproval(target, status);
+            const data = await updatePlayerApproval(target.id, status);
 
             // Update local state so UI updates immediately
             setCurrentApprovedStatus(status);

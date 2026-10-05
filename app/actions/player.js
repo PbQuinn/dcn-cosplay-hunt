@@ -154,22 +154,22 @@ export async function updatePlayerLastRefresh(playerUid, status) {
     return data;
 }
 
-export async function updatePlayerApproval(target, status) {
+export async function updatePlayerApproval(playerUid, status) {
     const { data, error } = await supabase
         .from("players")
         .update({ approved: status })
-        .eq("id", target.id)
+        .eq("id", playerUid)
         .select();
 
     if (error) throw new Error(error.message);
     return data;
 }
 
-export async function updatePlayerVisibility(target, status) {
+export async function updatePlayerVisibility(playerUid, status) {
     const { data, error } = await supabase
         .from("players")
         .update({ invisible: status })
-        .eq("id", target.id)
+        .eq("id", playerUid)
         .select();
 
     if (error) throw new Error(error.message);
@@ -177,11 +177,11 @@ export async function updatePlayerVisibility(target, status) {
 }
 
 // Remove player data
-export async function removePlayerPhoto(target) {
+export async function removePlayerPhoto(playerUid) {
   const { data, error } = await supabase
     .from("players")
     .update({ image_url: null })
-    .eq("id", target.id)
+    .eq("id", playerUid)
     .select();
 
   if (error) throw new Error(error.message);
@@ -214,7 +214,6 @@ export async function loadPlayerFromUid(playerUid) {
 
     return player;
 }
-
 
 export async function loadPlayerLists(conventionId) {
     return await Promise.all([

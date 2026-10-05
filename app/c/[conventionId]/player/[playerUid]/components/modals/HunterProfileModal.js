@@ -19,7 +19,7 @@ export function HunterProfileContent({ hunter, score, photoUrl, onClose, onPhoto
 
         setIsUpdating(true);
         try {
-            const data = await updatePlayerVisibility(hunter, status);
+            const data = await updatePlayerVisibility(hunter.id, status);
 
             // Update local state so UI updates immediately
             setCurrentVisibilityStatus(status);
@@ -34,7 +34,7 @@ export function HunterProfileContent({ hunter, score, photoUrl, onClose, onPhoto
     };
 
     const handleDeletePhoto = async () => {
-        await removePlayerPhoto(hunter);
+        await removePlayerPhoto(hunter.id);
         updateVisibilityStatus(true); // Set the player to invisible after deleting the photo
 
         // Call the parent callback to clear the state across the entire page
