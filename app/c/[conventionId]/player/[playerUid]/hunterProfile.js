@@ -8,16 +8,16 @@ import { updatePlayerLastRefresh } from "@/app/actions/player";
 
 // UI Components & Cards
 import { MissionBar } from "./MissionBar";
-import { TargetCard } from "./cards/TargetCard";
-import { RequestNewTargetCard } from "./cards/RequestNewTargetCard";
+import { TargetCard } from "./components/cards/TargetCard";
+import { RequestNewTargetCard } from "./components/cards/RequestNewTargetCard";
 
 // Modals & Shells
-import { Modal } from "./ui/Modal";
-import { TargetInfoContent } from "./modals/TargetInfoModal";
-import { CaptureContent } from "./modals/CaptureModal";
-import { HunterProfileContent } from "./modals/HunterProfileModal";
-import { NoCharFoundModal } from "./modals/NoCharFoundModal";
-import { RefreshAllContent } from "./modals/RefreshAllModal";
+import { Modal } from "./components/ui/Modal";
+import { TargetInfoContent } from "./components/modals/TargetInfoModal";
+import { CaptureContent } from "./components/modals/CaptureModal";
+import { HunterProfileContent } from "./components/modals/HunterProfileModal";
+import { NoCharFoundModal } from "./components/modals/NoCharFoundModal";
+import { RefreshAllContent } from "./components/modals/RefreshAllModal";
 
 // ---------------------------------------------------------------------------
 // Page
