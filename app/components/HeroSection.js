@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { formatTextDate, formatCompactTime } from "@/lib/formatDate";
+import { formatTextDate, formatCompactTime } from "@/lib/formatDateTime";
 
 export default function HeroSection({ convention, hunter, onJoinClick }) {
     const formattedDate = formatTextDate(convention.start_date);

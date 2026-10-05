@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import Link from 'next/link'
 import { loadConventions } from "../actions/convention";
 import { useAdminSession } from "@/lib/useAdminSession";
-import { formatNumberDate } from "@/lib/formatDate";
+import { formatNumberDate } from "@/lib/formatDateTime";
 
 export default function AdminPage({  }) {
     const { session, loading } = useAdminSession();
