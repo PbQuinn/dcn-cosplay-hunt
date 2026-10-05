@@ -138,6 +138,7 @@ export async function createPlayer(conventionId, formData) {
     redirect(`/c/${conventionId}/player/${appUid}`);
 }
 
+// Update player data
 export async function updatePlayerLastRefresh(playerUid, status) {
     const { data, error } = await supabase
         .from("players")
@@ -152,6 +153,41 @@ export async function updatePlayerLastRefresh(playerUid, status) {
 
     return data;
 }
+
+export async function updatePlayerApproval(target, status) {
+    const { data, error } = await supabase
+        .from("players")
+        .update({ approved: status })
+        .eq("id", target.id)
+        .select();
+
+    if (error) throw new Error(error.message);
+    return data;
+}
+
+export async function updatePlayerVisibility(target, status) {
+    const { data, error } = await supabase
+        .from("players")
+        .update({ invisible: status })
+        .eq("id", target.id)
+        .select();
+
+    if (error) throw new Error(error.message);
+    return data;
+}
+
+// Remove player data
+export async function removePlayerPhoto(target) {
+  const { data, error } = await supabase
+    .from("players")
+    .update({ image_url: null })
+    .eq("id", target.id)
+    .select();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 // Load player data
 export async function loadPlayers(conventionId) {
     const { data: players, error } = await supabase

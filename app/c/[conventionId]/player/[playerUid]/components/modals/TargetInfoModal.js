@@ -5,7 +5,7 @@ import { Eyebrow } from "../ui/Eyebrow";
 import { ModalCloseButton } from "../ui/Modal";
 import { initialsFor } from "../utils/hunterUtils";
 import { approvalStatusLabels, approvalStatuses } from "@/lib/constants";
-import { updatePlayerApproval } from "@/app/actions/target";
+import { updatePlayerApproval } from "@/app/actions/player";
 import { CaptureButton } from "./CaptureModal";
 import { DetailRow } from "../ui/DetailedRow";
 

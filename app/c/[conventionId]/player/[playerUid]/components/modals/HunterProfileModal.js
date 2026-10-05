@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Eyebrow } from "../ui/Eyebrow";
 import Avatar from "../ui/Avatar";
 import { ModalCloseButton } from "../ui/Modal";
-import { updatePlayerVisibility, removePlayerPhoto } from "@/app/actions/target";
+import { updatePlayerVisibility, removePlayerPhoto } from "@/app/actions/player";
 import { DetailRow } from "../ui/DetailedRow";
 
 export function HunterProfileContent({ hunter, score, photoUrl, onClose, onPhotoDeleted }) {
