@@ -7,6 +7,7 @@ import { usePolling } from "@/lib/usePolling";
 import { SubmissionList, ApprovalList } from "./PlayerLists";
 import LeaderBoard from "./LeaderBoard";
 import { loadPlayerLists } from "@/app/actions/player";
+import { Modal, TargetInfoContent } from "@/app/c/[conventionId]/player/[playerUid]/hunterProfile";
 
 export default function AdminDashboard({ convention }) {
   const conventionId = convention.id;
@@ -15,6 +16,7 @@ export default function AdminDashboard({ convention }) {
   const [submissions, setSubmissions] = useState([]);
   const [approval, setApproval] = useState([]);
   const [tab, setTab] = useState("approval");
+  const [selectedTarget, setSelectedTarget] = useState(null);
 
   const loadAll = useCallback(async () => {
     // Prevent fetching if session/conventionId aren't ready
@@ -46,7 +48,7 @@ export default function AdminDashboard({ convention }) {
   return (
     <div>
       {/* Back Button Wrapper */}
-      <div className="mb-8">
+      <div className="mt-4 mb-8">
         <Link href="/admin">
           <button type="button" className="btn-primary">
             ← Back to dashboard
@@ -72,16 +74,35 @@ export default function AdminDashboard({ convention }) {
 
       {tab === "approval" && <ApprovalList submissions={approval} />}
       {tab === "submissions" && <SubmissionList submissions={submissions} />}
-      {tab === "leaderboard" && <LeaderBoard leaderBoard={leaderBoard} />}
+      {tab === "leaderboard" && (
+        <LeaderBoard
+          leaderBoard={leaderBoard}
+          onSelectPlayer={(player) => setSelectedTarget(player)}
+        />
+      )}
 
       {/* Display view */}
-      <div className="mb-4">
+      <div className="mt-10 mb-4">
         <Link href={`/admin/conventions/${conventionId}/display`}>
           <button type="button" className="btn-primary">
             Switch to Display view
           </button>
         </Link>
       </div>
+
+      {/* Target Info Modal for Admin */}
+      {selectedTarget && (
+        <Modal labelledBy="target-info-title" onClose={() => setSelectedTarget(null)}>
+          <TargetInfoContent
+            target={selectedTarget}
+            onClose={() => setSelectedTarget(null)}
+            isAdmin={true}
+            onUpdateTarget={(updatedPlayer) => {
+              setSelectedTarget(updatedPlayer);
+            }}
+          />
+        </Modal>
+      )}
     </div>
   );
 
