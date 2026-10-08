@@ -1,20 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Modal, TargetInfoContent } from "@/app/c/[conventionId]/player/[playerUid]/hunterProfile";
 import { approvalStatusLabels } from "@/lib/constants";
-
-function formatDate(dateString) {
-  if (!dateString) return "";
-  const d = new Date(dateString);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  const hours = String(d.getHours()).padStart(2, "0");
-  const minutes = String(d.getMinutes()).padStart(2, "0");
-
-  return `${year}-${month}-${day} ${hours}:${minutes}`;
-}
+import { formatDateTime } from "@/lib/formatDateTime";
+import { Modal } from "@/app/c/[conventionId]/player/[playerUid]/components/ui/Modal";
+import { TargetInfoContent } from "@/app/c/[conventionId]/player/[playerUid]/components/modals/TargetInfoModal";
 
 // Helper to construct full target object with computed photo URL
 function normalizeTarget(item) {
@@ -72,7 +62,7 @@ export function SubmissionList({ submissions }) {
               </span>
             </span>
             <span className="font-mono text-[10px] text-parchment/30">
-              Created at {formatDate(s.created_at)}
+              Created at {formatDateTime(s.created_at)}
             </span>
           </li>
         ))}
@@ -115,7 +105,7 @@ export function ApprovalList({ submissions }) {
               </span>{" "}
             </span>
             <span className="font-mono text-[10px] text-parchment/30">
-              Created at {formatDate(s.created_at)}
+              Created at {formatDateTime(s.created_at)}
             </span>
           </li>
         ))}

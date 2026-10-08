@@ -1,11 +1,10 @@
 "use client";
 
-// import { cookies } from "next/headers";
 import { useState, useEffect } from "react";
 import Link from 'next/link'
 import { loadConventions } from "../actions/convention";
 import { useAdminSession } from "@/lib/useAdminSession";
-import { numberDate } from "@/lib/formatDate";
+import { formatNumberDate } from "@/lib/formatDateTime";
 
 export default function AdminPage({  }) {
     const { session, loading } = useAdminSession();
@@ -88,7 +87,7 @@ export default function AdminPage({  }) {
                                 >
                                     {c.name}
                                     <span className="ml-2 font-mono text-xs text-parchment/40">
-                                        {numberDate(c.start_date)} – {numberDate(c.end_date)}
+                                        {formatNumberDate(c.start_date)} – {formatNumberDate(c.end_date)}
                                     </span>
                                 </Link>
                             </li>
