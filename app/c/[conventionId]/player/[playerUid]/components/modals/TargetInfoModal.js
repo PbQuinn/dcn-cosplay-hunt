@@ -8,6 +8,7 @@ import { approvalStatusLabels, approvalStatuses } from "@/lib/constants";
 import { updatePlayerApproval } from "@/app/actions/player";
 import { CaptureButton } from "./CaptureModal";
 import { DetailRow } from "../ui/DetailedRow";
+import { formatNumber } from "@/lib/formatNumber";
 
 // ---------------------------------------------------------------------------
 // Modal contents
@@ -119,6 +120,10 @@ export function TargetInfoContent({
                         <DetailRow
                             label="Approval"
                             value={approvalStatusLabels[currentApprovedStatus] || "-"}
+                        />
+                        <DetailRow
+                            label="Recovery code"
+                            value={target?.recovery_code ? formatNumber(target.recovery_code) : "-"}
                         />
                     </dl>
 
