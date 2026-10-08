@@ -120,6 +120,10 @@ export function TargetInfoContent({
                             label="Approval"
                             value={approvalStatusLabels[currentApprovedStatus] || "-"}
                         />
+                        <DetailRow
+                            label="Recovery code"
+                            value={target?.recovery_code ? formatNumber(target.recovery_code) : "-"}
+                        />
                     </dl>
 
                     {/* Approval Buttons */}

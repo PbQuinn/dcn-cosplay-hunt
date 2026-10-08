@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { formatTextDate, formatCompactTime } from "@/lib/formatDateTime";
 
-export default function HeroSection({ convention, hunter, onJoinClick }) {
+export default function HeroSection({ convention, hunter, onJoinClick, onOpenRecoveryModal }) {
     const formattedDate = formatTextDate(convention.start_date);
     const startTime = formatCompactTime(convention.start_date);
     const endTime = formatCompactTime(convention.end_date);
@@ -40,13 +40,26 @@ export default function HeroSection({ convention, hunter, onJoinClick }) {
                 </p>
 
                 {!hunter ? (
-                    <button
-                        type="button"
-                        className="btn-primary mt-10 px-8 py-4 text-lg"
-                        onClick={onJoinClick}
-                    >
-                        Join The Game
-                    </button>
+                    <div className="flex flex-col items-center">
+                        <button
+                            type="button"
+                            className="btn-primary mt-10 px-8 py-4 text-lg"
+                            onClick={() => setShowModal(true)}
+                        >
+                            Join The Game
+                        </button>
+
+                        <p className="mx-auto mt-4 max-w-2xl text-sm text-gray-500">
+                            Lost your account? Go to the DCN stand{convention?.stand_location && ` (${convention.stand_location})`} and{" "}
+                            <button
+                                type="button"
+                                className="text-primary underline hover:opacity-80"
+                                onClick={onOpenRecoveryModal}
+                            >
+                                click here
+                            </button>!
+                        </p>
+                    </div>
                 ) : (
                     <div className="flex flex-col items-center">
                         <p className="mx-auto mt-6 max-w-2xl text-lg text-parchment/70 sm:text-xl">
