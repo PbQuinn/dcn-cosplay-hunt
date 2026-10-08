@@ -3,7 +3,7 @@
 import { randomUUID } from "crypto";
 import { supabase } from "@/lib/supabaseServer";
 import { requestFreshTargetAssignment } from "./target";
-import { landPlayer } from "../landPlayer";
+import { landPlayer } from "../components/util/landPlayer";
 import { generateSeededRecoveryCode } from "@/lib/seededGeneration";
 import { approvalStatuses } from "@/lib/constants";
 

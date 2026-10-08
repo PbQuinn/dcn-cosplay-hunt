@@ -4,7 +4,7 @@ import { useState } from "react";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { loadPlayerFromRecovery } from "@/app/actions/player";
 import { formatNumber } from "@/lib/formatNumber";
-import { landPlayer } from "../landPlayer";
+import { landPlayer } from "../../landPlayer";
 
 export default function AccountRecoveryModal({ conventionId, onClose }) {
     const [recoveryCode, setRecoveryCode] = useState("");
