@@ -7,7 +7,8 @@ import { usePolling } from "@/lib/usePolling";
 import { SubmissionList, ApprovalList } from "./PlayerLists";
 import LeaderBoard from "./LeaderBoard";
 import { loadPlayerLists } from "@/app/actions/player";
-import { Modal, TargetInfoContent } from "@/app/c/[conventionId]/player/[playerUid]/hunterProfile";
+import { Modal } from "@/app/c/[conventionId]/player/[playerUid]/components/ui/Modal";
+import { TargetInfoContent } from "@/app/c/[conventionId]/player/[playerUid]/components/modals/TargetInfoModal";
 
 export default function AdminDashboard({ convention }) {
   const conventionId = convention.id;

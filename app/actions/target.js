@@ -18,39 +18,6 @@ export async function loadCaptures(conventionId) {
   return captures;
 }
 
-export async function updatePlayerApproval(target, status) {
-  const { data, error } = await supabase
-    .from("players")
-    .update({ approved: status })
-    .eq("id", target.id)
-    .select();
-
-  if (error) throw new Error(error.message);
-  return data;
-}
-
-export async function updatePlayerVisibility(target, status) {
-  const { data, error } = await supabase
-    .from("players")
-    .update({ invisible: status })
-    .eq("id", target.id)
-    .select();
-
-  if (error) throw new Error(error.message);
-  return data;
-}
-
-export async function removePlayerPhoto(target) {
-  const { data, error } = await supabase
-    .from("players")
-    .update({ image_url: null })
-    .eq("id", target.id)
-    .select();
-
-  if (error) throw new Error(error.message);
-  return data;
-}
-
 /* Get the UID of a random fellow hunter */
 export async function getNewTarget(conventionId, hunterId, currentTargets) {
   // TODO: Implement query that only considers records that are:
@@ -88,7 +55,6 @@ export async function getNewTarget(conventionId, hunterId, currentTargets) {
   return target ? { newTarget: target.app_uid, error: undefined } : { newTarget: undefined, error: undefined }
 }
 
-
 /* Get the hunters current target list */
 export async function getHunterTargetIds(conventionId, hunterId) {
   return new Promise(async (resolve) => {
@@ -105,7 +71,7 @@ export async function getHunterTargetIds(conventionId, hunterId) {
     resolve(targetListFromString(hunterLine?.targets))
   })
 }
-// f9e13058-4acb-49fb-b494-869b7f291187 786f2e7b-1a12-4be9-a829-fde41cfbea72
+
 /* Request a new target */
 export async function requestNewTargetAssignment(conventionId, hunterId) {
   const reqId = Math.random().toString(36).substring(2, 9);
