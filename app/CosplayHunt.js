@@ -9,7 +9,6 @@ import AccountRecoveryModal from "./components/AccountRecovery";
 export default function CosplayHunt({ convention, hunter }) {
   const [showModal, setShowModal] = useState(false);
   const [showRecoveryModal, setShowRecoveryModal] = useState(false);
-  const [recoveryCode, setRecoveryCode] = useState("");
 
   return (
     <main className="min-h-screen">
