@@ -44,7 +44,7 @@ export default function HeroSection({ convention, hunter, onJoinClick, onOpenRec
                         <button
                             type="button"
                             className="btn-primary mt-10 px-8 py-4 text-lg"
-                            onClick={() => setShowModal(true)}
+                            onClick={onJoinClick}
                         >
                             Join The Game
                         </button>
