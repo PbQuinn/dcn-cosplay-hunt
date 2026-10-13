@@ -47,6 +47,10 @@ export default function ConventionForm({ onConventionCreated }) {
         }
     }
 
+    function updateForm(field, value) {
+        setForm((prev) => ({ ...prev, [field]: value }));
+    }
+
     function handlePhotoChange(e) {
         updateForm("icon", e.target.files?.[0] ?? null);
     }
