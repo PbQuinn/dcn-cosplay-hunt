@@ -1,6 +1,8 @@
 "use server"
 import { supabase } from "@/lib/supabaseServer";
 import { randomUUID } from "crypto";
+import { removeCaptures } from "./target";
+import { removePlayers } from "./player";
 
 // Create convention data
 export async function createConvention(formData) {
@@ -76,7 +78,39 @@ export async function createConvention(formData) {
 // Update convention data
 
 // Remove convention data
-export async function deleteConvention(conventionId) {
+export async function removeConventionIcon(conventionId) {
+    const convention = await loadConvention(conventionId);
+    if (!convention || !convention.logo_url) return;
+
+    const { error } = await supabase.storage
+        .from("convention-logos")
+        .remove([convention.logo_url]);
+
+    if (error) {
+        console.error("Failed to delete convention icon from storage:", error.message);
+    }
+    return error;
+}
+
+export async function removeConvention(conventionId) {
+    // 0. Remove convention logo from storage first
+    await removeConventionIcon(conventionId);
+
+    // 1. Delete related captures first (foreign key dependency)
+    const capturesError = await removeCaptures(conventionId);
+    if (capturesError) {
+        console.error("Failed to delete related captures:", capturesError.message || capturesError);
+        return capturesError;
+    }
+
+    // 2. Delete related players next (which also clears player photos)
+    const playersError = await removePlayers(conventionId);
+    if (playersError) {
+        console.error("Failed to delete related players:", playersError.message || playersError);
+        return playersError;
+    }
+
+    // 3. Finally, delete the convention itself from the database
     const { error } = await supabase
         .from("conventions")
         .delete()
@@ -85,7 +119,7 @@ export async function deleteConvention(conventionId) {
     if (error) {
         console.error("Failed to delete convention:", error.message);
     }
-    return error
+    return error;
 }
 
 // Load convention data

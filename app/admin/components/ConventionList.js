@@ -4,27 +4,38 @@ import { useState } from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
 import { formatNumberDate } from "@/lib/formatDateTime";
-import { deleteConvention } from "@/app/actions/convention";
+import { removeConvention } from "@/app/actions/convention";
 import { Modal, ModalCloseButton } from "@/app/c/[conventionId]/player/[playerUid]/components/ui/Modal";
 
 export default function ConventionList({ conventions, fetching, onConventionDeleted }) {
     const [conventionToDelete, setConventionToDelete] = useState(null);
     const [deleting, setDeleting] = useState(false);
+    const [error, setError] = useState("");
 
     async function handleDeleteConfirm() {
         if (!conventionToDelete) return;
 
         setDeleting(true);
-        const error = await deleteConvention(conventionToDelete.id);
+        setError("");
 
-        setDeleting(false);
-        if (!error) {
+        try {
+            // Call the consolidated server action
+            const actionError = await removeConvention(conventionToDelete.id);
+
+            if (actionError) {
+                throw new Error("Failed to delete the convention and its related data.");
+            }
+
+            // Success flow
             setConventionToDelete(null);
             if (onConventionDeleted) {
                 onConventionDeleted();
             }
-        } else {
-            console.error("Failed to delete convention:", error.message);
+        } catch (err) {
+            console.error("Deletion process failed:", err);
+            setError(err.message || "An unexpected error occurred.");
+        } finally {
+            setDeleting(false);
         }
     }
 
@@ -66,6 +77,7 @@ export default function ConventionList({ conventions, fetching, onConventionDele
                 ))}
             </ul>
 
+            {/* Deletion Confirmation Modal */}
             {conventionToDelete && (
                 <Modal labelledBy="delete-convention-title" onClose={() => setConventionToDelete(null)}>
                     <div className="relative pt-1 text-center">
@@ -74,9 +86,13 @@ export default function ConventionList({ conventions, fetching, onConventionDele
                         <h3 id="delete-convention-title" className="font-display text-2xl font-bold mb-3 text-parchment mt-2">
                             Delete Convention?
                         </h3>
-                        <p className="font-body text-sm text-parchment/70 mb-6">
+                        <p className="font-body text-sm text-parchment/70 mb-4">
                             Are you sure you want to delete <b className="text-parchment">{conventionToDelete.name}</b>? This action cannot be undone.
                         </p>
+
+                        {error && (
+                            <p className="text-sm text-flare mb-4 font-body">{error}</p>
+                        )}
 
                         <div className="flex items-center justify-center gap-3 pb-2">
                             <button

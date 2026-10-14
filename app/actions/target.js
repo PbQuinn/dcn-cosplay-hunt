@@ -18,6 +18,19 @@ export async function loadCaptures(conventionId) {
   return captures;
 }
 
+// Remove capture data
+export async function removeCaptures(conventionId) {
+  const { error } = await supabase
+    .from("captures")
+    .delete()
+    .eq("convention_id", conventionId);
+
+  if (error) {
+    console.error("Failed to delete captures:", error.message);
+  }
+  return error
+}
+
 /* Get the UID of a random fellow hunter */
 export async function getNewTarget(conventionId, hunterId, currentTargets) {
   // TODO: Implement query that only considers records that are:

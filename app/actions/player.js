@@ -177,15 +177,62 @@ export async function updatePlayerVisibility(playerUid, status) {
 }
 
 // Remove player data
-export async function removePlayerPhoto(playerUid) {
-  const { data, error } = await supabase
-    .from("players")
-    .update({ image_url: null })
-    .eq("id", playerUid)
-    .select();
+export async function removePlayerPhotoFromUid(playerUid) {
+    const { data, error } = await supabase
+        .from("players")
+        .update({ image_url: null })
+        .eq("id", playerUid)
+        .select();
 
-  if (error) throw new Error(error.message);
-  return data;
+    if (error) throw new Error(error.message);
+    return data;
+}
+
+export async function removePlayerPhotoFromPath(imagePath) {
+    if (!imagePath) return;
+
+    const { error } = await supabase.storage
+        .from("hunter-photos")
+        .remove([imagePath]);
+
+    if (error) {
+        console.error("Failed to delete photo from storage:", error.message);
+    }
+    return error;
+}
+
+export async function removePlayers(conventionId) {
+    try {
+        // 1. Load players to retrieve their image_url paths
+        const { data: players, error: fetchError } = await loadPlayers(conventionId);
+
+        if (fetchError) {
+            console.error("Failed to fetch player photos before deletion:", fetchError.message);
+        } else if (players && players.length > 0) {
+            // Delete storage files concurrently
+            const photoPromises = players
+                .map((p) => p.image_url)
+                .filter(Boolean)
+                .map((photoPath) => removePlayerPhotoFromPath(photoPath));
+
+            await Promise.all(photoPromises);
+        }
+
+        // 2. Delete player rows from database
+        const { error: deleteError } = await supabase
+            .from("players")
+            .delete()
+            .eq("convention_id", conventionId);
+
+        if (deleteError) {
+            console.error("Failed to delete players:", deleteError.message);
+        }
+
+        return deleteError;
+    } catch (err) {
+        console.error("Error occurred in removePlayers:", err);
+        return err;
+    }
 }
 
 // Load player data

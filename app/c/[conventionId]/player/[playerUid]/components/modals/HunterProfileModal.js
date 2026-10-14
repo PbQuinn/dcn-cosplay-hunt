@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Eyebrow } from "../ui/Eyebrow";
 import Avatar from "../ui/Avatar";
 import { ModalCloseButton } from "../ui/Modal";
-import { updatePlayerVisibility, removePlayerPhoto } from "@/app/actions/player";
+import { updatePlayerVisibility, removePlayerPhotoFromUid } from "@/app/actions/player";
 import { DetailRow } from "../ui/DetailedRow";
 
 export function HunterProfileContent({ hunter, score, photoUrl, onClose, onPhotoDeleted }) {
@@ -34,7 +34,7 @@ export function HunterProfileContent({ hunter, score, photoUrl, onClose, onPhoto
     };
 
     const handleDeletePhoto = async () => {
-        await removePlayerPhoto(hunter.id);
+        await removePlayerPhotoFromUid(hunter.id);
         updateVisibilityStatus(true); // Set the player to invisible after deleting the photo
 
         // Call the parent callback to clear the state across the entire page
