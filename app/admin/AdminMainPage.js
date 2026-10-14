@@ -44,7 +44,11 @@ export default function AdminPage() {
             </div>
 
             <div className="grid gap-8 sm:grid-cols-2">
-                <ConventionList conventions={conventions} fetching={fetching} />
+                <ConventionList
+                    conventions={conventions}
+                    fetching={fetching}
+                    onConventionDeleted={loadConventionsFromDb}
+                />
                 <ConventionForm
                     onConventionCreated={loadConventionsFromDb}
                 />

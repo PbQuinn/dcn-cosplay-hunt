@@ -147,7 +147,7 @@ export default function ConventionForm({ onConventionCreated }) {
                 </div>
                 <div>
                     <label className="eyebrow mb-2 block" htmlFor="photo">
-                        Upload convention logo
+                        Convention logo
                     </label>
                     <input
                         id="icon"

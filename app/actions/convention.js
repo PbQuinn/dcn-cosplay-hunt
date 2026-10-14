@@ -2,6 +2,7 @@
 import { supabase } from "@/lib/supabaseServer";
 import { randomUUID } from "crypto";
 
+// Create convention data
 export async function createConvention(formData) {
     // Console styling
     const reqId = Math.random().toString(36).substring(2, 9);
@@ -72,6 +73,22 @@ export async function createConvention(formData) {
     }
 }
 
+// Update convention data
+
+// Remove convention data
+export async function deleteConvention(conventionId) {
+    const { error } = await supabase
+        .from("conventions")
+        .delete()
+        .eq("id", conventionId);
+
+    if (error) {
+        console.error("Failed to delete convention:", error.message);
+    }
+    return error
+}
+
+// Load convention data
 export async function loadConventions() {
 
     const { data, error } = await supabase
