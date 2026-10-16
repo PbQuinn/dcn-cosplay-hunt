@@ -8,6 +8,7 @@ import { approvalStatusLabels, approvalStatuses } from "@/lib/constants";
 import { updatePlayerApproval } from "@/app/actions/player";
 import { CaptureButton } from "./CaptureModal";
 import { DetailRow } from "../ui/DetailedRow";
+import { getPhotoUrl } from "@/lib/getPhotoUrl";
 
 // Helper to determine the photo endpoint URL
 function getPhotoUrl(target) {
