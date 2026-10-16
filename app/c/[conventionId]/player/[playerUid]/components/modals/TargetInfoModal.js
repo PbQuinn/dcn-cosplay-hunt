@@ -9,6 +9,7 @@ import { updatePlayerApproval } from "@/app/actions/player";
 import { CaptureButton } from "./CaptureModal";
 import { DetailRow } from "../ui/DetailedRow";
 import { formatNumber } from "@/lib/formatNumber";
+import { getPhotoUrl } from "@/lib/getPhotoUrl";
 
 // ---------------------------------------------------------------------------
 // Modal contents

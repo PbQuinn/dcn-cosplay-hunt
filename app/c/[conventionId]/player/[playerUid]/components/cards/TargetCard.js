@@ -3,18 +3,13 @@
 import { useState } from "react";
 import { Camera } from "lucide-react";
 import { initialsFor } from "../utils/hunterUtils";
+import { getPhotoUrl } from "@/lib/getPhotoUrl";
 
-// ---------------------------------------------------------------------------
-// Target card — the "viewfinder" signature element
-//
-// The scanline relies on a `scan` keyframe/animation living in
-// tailwind.config.js (see note at the bottom of this file) so it — and its
-// timing/color — can be tweaked centrally instead of inline. `motion-safe:`
-// means it's skipped entirely under prefers-reduced-motion for free.
-// ---------------------------------------------------------------------------
 export function TargetCard({ target, captured, onOpenInfo, onOpenCapture }) {
+  const photoUrl = getPhotoUrl(target);
+
   const [errored, setErrored] = useState(false);
-  const showImage = Boolean(target?.invisible) && !errored;
+  const showImage = !Boolean(target?.invisible) && !errored;
 
   const handleInfoClick = () => {
     if (typeof onOpenInfo === "function") {
@@ -26,8 +21,9 @@ export function TargetCard({ target, captured, onOpenInfo, onOpenCapture }) {
     console.error("%c[TargetCard Error] Failed to load image:", "color: #ef4444; font-weight: bold;", {
       app_uid: target?.app_uid,
       character: target?.character,
-      attemptedUrl: target?.photoUrl,
-      nativeEvent: e
+      photoUrl,
+      attemptedUrl: target?.image_url,
+      nativeEvent: e,
     });
     setErrored(true);
   };
@@ -51,7 +47,7 @@ export function TargetCard({ target, captured, onOpenInfo, onOpenCapture }) {
       >
         {showImage ? (
           <img
-            src={target?.photoUrl}
+            src={photoUrl}
             alt={target?.character}
             onError={handleImageError}
             className="h-full w-full object-cover"
