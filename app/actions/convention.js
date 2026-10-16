@@ -20,25 +20,25 @@ export async function createConvention(formData) {
     const venue = formData.get("venue");
     const address = formData.get("address");
     const stand_location = formData.get("stand_location");
-    const icon = formData.get("icon");
+    const logo = formData.get("logo");
 
     const conventionId = randomUUID();
-    let iconPath = null;
+    let logoPath = null;
 
-    // Upload icon
-    if (icon instanceof File) {
+    // Upload logo
+    if (logo instanceof File) {
         const uploadStartTime = performance.now();
 
-        const extension = icon.name.split(".").pop()?.toLowerCase() || "jpg";
-        iconPath = `${conventionId}.${extension}`;
+        const extension = logo.name.split(".").pop()?.toLowerCase() || "jpg";
+        logoPath = `${conventionId}.${extension}`;
 
-        const arrayBuffer = await icon.arrayBuffer();
+        const arrayBuffer = await logo.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
 
         const { error: uploadError } = await supabase.storage
             .from("convention-logos")
-            .upload(iconPath, buffer, {
-                contentType: icon.type,
+            .upload(logoPath, buffer, {
+                contentType: logo.type,
                 cacheControl: "3600",
                 upsert: false,
             });
@@ -55,7 +55,7 @@ export async function createConvention(formData) {
         id: conventionId,
         name: name.toString().trim() || "",
         theme: theme.toString().trim() || "",
-        logo_url: iconPath,
+        logo_url: logoPath,
         start_date,
         end_date,
         created_at: new Date().toISOString(),
@@ -78,7 +78,7 @@ export async function createConvention(formData) {
 // Update convention data
 
 // Remove convention data
-export async function removeConventionIcon(conventionId) {
+export async function removeConventionLogo(conventionId) {
     const convention = await loadConvention(conventionId);
     if (!convention || !convention.logo_url) return;
 
@@ -87,14 +87,14 @@ export async function removeConventionIcon(conventionId) {
         .remove([convention.logo_url]);
 
     if (error) {
-        console.error("Failed to delete convention icon from storage:", error.message);
+        console.error("Failed to delete convention logo from storage:", error.message);
     }
     return error;
 }
 
 export async function removeConvention(conventionId) {
     // 0. Remove convention logo from storage first
-    await removeConventionIcon(conventionId);
+    await removeConventionLogo(conventionId);
 
     // 1. Delete related captures first (foreign key dependency)
     const capturesError = await removeCaptures(conventionId);

@@ -12,7 +12,7 @@ export default function ConventionForm({ onConventionCreated }) {
         venue: "",
         address: "",
         stand_location: "",
-        icon: null,
+        logo: null,
     });
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState("");
@@ -31,7 +31,7 @@ export default function ConventionForm({ onConventionCreated }) {
             formData.append("venue", form.venue);
             formData.append("address", form.address);
             formData.append("stand_location", form.stand_location);
-            formData.append("icon", form.icon);
+            formData.append("logo", form.logo);
 
             await createConvention(formData);
         } catch (err) {
@@ -52,7 +52,7 @@ export default function ConventionForm({ onConventionCreated }) {
     }
 
     function handlePhotoChange(e) {
-        updateForm("icon", e.target.files?.[0] ?? null);
+        updateForm("logo", e.target.files?.[0] ?? null);
     }
 
     return (
@@ -150,7 +150,7 @@ export default function ConventionForm({ onConventionCreated }) {
                         Convention logo
                     </label>
                     <input
-                        id="icon"
+                        id="logo"
                         type="file"
                         accept="image/*"
                         onChange={handlePhotoChange}
