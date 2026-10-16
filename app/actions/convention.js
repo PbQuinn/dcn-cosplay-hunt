@@ -133,31 +133,53 @@ export async function loadConventions() {
 }
 
 export async function getCurrentConvention() {
-  const now = new Date().toISOString();
+    const now = new Date().toISOString();
 
-  const { data: convention, error } = await supabase
-    .from("conventions")
-    .select("*")
-    .order("start_date", { ascending: true })
-    .gt("end_date", now)
-    .lt("start_date", now)
-    .limit(1)
-    .maybeSingle();
+    const { data: convention, error } = await supabase
+        .from("conventions")
+        .select("*")
+        .order("start_date", { ascending: true })
+        .gt("end_date", now)
+        .lt("start_date", now)
+        .limit(1)
+        .maybeSingle();
 
-  if (error) {
-    console.error("❌ [getCurrentConvention] Error fetching current convention:", error);
-    return null;
-  }
+    if (error) {
+        console.error("❌ [getCurrentConvention] Error fetching current convention:", error);
+        return null;
+    }
 
-  return convention;
+    return convention;
 }
 
 export async function loadConvention(conventionId) {
-    const { data, error } = await supabase
-        .from("conventions")
-        .select("*")
-        .eq("id", conventionId);
-    if (!data || data?.length === 0) return
+    if (!conventionId) {
+        return null;
+    }
 
-    return data[0];
+    try {
+        const { data, error } = await supabase
+            .from("conventions")
+            .select("*")
+            .eq("id", conventionId);
+
+        if (error) {
+            console.error("❌ [loadConvention] Supabase Query Error:", {
+                code: error.code,
+                message: error.message,
+                details: error.details,
+                hint: error.hint,
+            });
+            return null;
+        }
+
+        if (!data || data.length === 0) {
+            return null;
+        }
+
+        return data[0];
+    } catch (err) {
+        console.error("❌ [loadConvention] Unexpected error during execution:", err);
+        return null;
+    }
 }

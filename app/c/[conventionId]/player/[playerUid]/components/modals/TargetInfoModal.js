@@ -9,6 +9,25 @@ import { updatePlayerApproval } from "@/app/actions/player";
 import { CaptureButton } from "./CaptureModal";
 import { DetailRow } from "../ui/DetailedRow";
 
+// Helper to determine the photo endpoint URL
+function getPhotoUrl(target) {
+    if (!target) return null;
+
+    // If target already has an explicit photo route or relative path provided by parent
+    if (target.photoUrl) return target.photoUrl;
+
+    // Build route URL if target has convention_id and app_uid / id
+    const conventionId = target.convention_id || target.conventionId;
+    const playerUid = target.app_uid || target.appUid;
+
+    if (conventionId && playerUid) {
+        return `/c/${conventionId}/player/${playerUid}/photo`;
+    }
+
+    // Fall back to image_url if it's already an absolute or valid relative path
+    return target.image_url || null;
+}
+
 // ---------------------------------------------------------------------------
 // Modal contents
 // ---------------------------------------------------------------------------
@@ -21,15 +40,17 @@ export function TargetInfoContent({
     onOpenCapture,
     onUpdateTarget
 }) {
+    const photoUrl = getPhotoUrl(target);
+
     const [errored, setErrored] = useState(false);
     const [currentApprovedStatus, setCurrentApprovedStatus] = useState(target?.approved);
     const [isUpdating, setIsUpdating] = useState(false);
-    const showImage = Boolean(target?.photoUrl) && !errored;
+    const showImage = Boolean(photoUrl) && !errored;
 
     const handleCaptureClick = () => {
         if (onOpenCapture && target) {
-            onClose(); // Close the info modal
-            onOpenCapture(target); // Open the capture modal
+            onClose();
+            onOpenCapture(target);
         }
     };
 
@@ -43,10 +64,8 @@ export function TargetInfoContent({
         try {
             const data = await updatePlayerApproval(target.id, status);
 
-            // Update local state so UI updates immediately
             setCurrentApprovedStatus(status);
 
-            // Optional: Inform parent component of the updated record
             if (onUpdateTarget && data?.[0]) {
                 onUpdateTarget(data[0]);
             }
@@ -68,15 +87,17 @@ export function TargetInfoContent({
     return (
         <div className="relative pt-1">
             <ModalCloseButton
-                onClose={onClose}
+                onClose={() => {
+                    onClose();
+                }}
             />
 
             <div className="mb-4 flex aspect-[16/11] w-full items-center justify-center overflow-hidden rounded-2xl bg-ink">
                 {showImage ? (
                     <img
-                        src={target.photoUrl}
+                        src={photoUrl}
                         alt={target.character || "Target"}
-                        onError={(e) => {
+                        onError={() => {
                             setErrored(true);
                         }}
                         className="h-full w-full object-cover object-center"
@@ -108,7 +129,7 @@ export function TargetInfoContent({
             )}
 
             {/* ---------------------------------------------------- */}
-            {/* SHIELDED ADMIN DATA                                  */}
+            {/* SHIELDED ADMIN DATA                                   */}
             {/* ---------------------------------------------------- */}
             {isAdmin ? (
                 <div className="mt-4 border-t border-parchment/10 pt-2">
@@ -154,7 +175,7 @@ export function TargetInfoContent({
                 </div>
             ) : (
                 /* ---------------------------------------------------- */
-                /* PUBLIC INSTRUCTIONS                                 */
+                /* PUBLIC INSTRUCTIONS                                  */
                 /* ---------------------------------------------------- */
                 <div className="mt-3 space-y-4">
                     <p className="font-body text-sm leading-relaxed text-parchment/80">

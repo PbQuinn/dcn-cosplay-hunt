@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import Link from "next/link";
 import { useAdminSession } from "@/lib/useAdminSession";
 import { usePolling } from "@/lib/usePolling";
@@ -11,7 +11,7 @@ import { Modal } from "@/app/c/[conventionId]/player/[playerUid]/components/ui/M
 import { TargetInfoContent } from "@/app/c/[conventionId]/player/[playerUid]/components/modals/TargetInfoModal";
 
 export default function AdminDashboard({ convention }) {
-  const conventionId = convention.id;
+  const conventionId = convention?.id;
   const { session, loading } = useAdminSession();
   const [leaderBoard, setLeaderBoard] = useState([]);
   const [submissions, setSubmissions] = useState([]);
@@ -20,17 +20,33 @@ export default function AdminDashboard({ convention }) {
   const [selectedTarget, setSelectedTarget] = useState(null);
 
   const loadAll = useCallback(async () => {
-    // Prevent fetching if session/conventionId aren't ready
+    if (!conventionId) {
+      return;
+    }
 
-    const [{ data: apps }, { data: subs }, { data: leaderboard }] = await loadPlayerLists(conventionId)
+    try {
+      const results = await loadPlayerLists(conventionId);
 
-    setLeaderBoard(leaderboard ?? []);
-    setSubmissions(subs ?? []);
-    setApproval(apps ?? []);
-  }, [session]);
+      const [appsRes, subsRes, leaderboardRes] = results || [{}, {}, {}];
+
+      const apps = appsRes?.data ?? [];
+      const subs = subsRes?.data ?? [];
+      const leaderboard = leaderboardRes?.data ?? [];
+
+      setLeaderBoard(leaderboard);
+      setSubmissions(subs);
+      setApproval(apps);
+    } catch (err) {
+      console.error("❌ [AdminDashboard - loadAll] Unexpected error during fetch:", err);
+    }
+  }, [conventionId, session]);
+
+  // Log polling activity state changes
+  useEffect(() => {
+  }, [session, conventionId]);
 
   // Poll loadAll every 5000ms (5s) only when session exists, otherwise pass null to pause
-  usePolling(loadAll, session ? 5000 : null);
+  usePolling(loadAll, session && conventionId ? 5000 : null);
 
   if (loading || !session) {
     return <p className="text-parchment/50">Checking credentials…</p>;
@@ -45,6 +61,22 @@ export default function AdminDashboard({ convention }) {
     { id: "submissions", label: `Submissions (${submissions.length})` },
     { id: "leaderboard", label: `Leaderboard` },
   ];
+
+  const handleTabChange = (tabId) => {
+    setTab(tabId);
+  };
+
+  const handleSelectPlayer = (player) => {
+    setSelectedTarget(player);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedTarget(null);
+  };
+
+  const handleUpdateTarget = (updatedPlayer) => {
+    setSelectedTarget(updatedPlayer);
+  };
 
   return (
     <div>
@@ -64,7 +96,7 @@ export default function AdminDashboard({ convention }) {
         {tabs.map((t, i) => (
           <button
             key={`${t.id}-${i}`}
-            onClick={() => setTab(t.id)}
+            onClick={() => handleTabChange(t.id)}
             className={`font-mono text-xs uppercase tracking-wide ${tab === t.id ? "text-flare" : "text-parchment/50 hover:text-parchment"
               }`}
           >
@@ -78,7 +110,7 @@ export default function AdminDashboard({ convention }) {
       {tab === "leaderboard" && (
         <LeaderBoard
           leaderBoard={leaderBoard}
-          onSelectPlayer={(player) => setSelectedTarget(player)}
+          onSelectPlayer={handleSelectPlayer}
         />
       )}
 
@@ -93,18 +125,15 @@ export default function AdminDashboard({ convention }) {
 
       {/* Target Info Modal for Admin */}
       {selectedTarget && (
-        <Modal labelledBy="target-info-title" onClose={() => setSelectedTarget(null)}>
+        <Modal labelledBy="target-info-title" onClose={handleCloseModal}>
           <TargetInfoContent
             target={selectedTarget}
-            onClose={() => setSelectedTarget(null)}
+            onClose={handleCloseModal}
             isAdmin={true}
-            onUpdateTarget={(updatedPlayer) => {
-              setSelectedTarget(updatedPlayer);
-            }}
+            onUpdateTarget={handleUpdateTarget}
           />
         </Modal>
       )}
     </div>
   );
-
 }
