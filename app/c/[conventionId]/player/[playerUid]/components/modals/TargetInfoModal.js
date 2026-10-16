@@ -39,6 +39,7 @@ export function TargetInfoContent({
         }
 
         setIsUpdating(true);
+
         try {
             const data = await updatePlayerApproval(target.id, status);
 
@@ -66,14 +67,18 @@ export function TargetInfoContent({
 
     return (
         <div className="relative pt-1">
-            <ModalCloseButton onClose={onClose} />
+            <ModalCloseButton
+                onClose={onClose}
+            />
 
             <div className="mb-4 flex aspect-[16/11] w-full items-center justify-center overflow-hidden rounded-2xl bg-ink">
                 {showImage ? (
                     <img
                         src={target.photoUrl}
                         alt={target.character || "Target"}
-                        onError={() => setErrored(true)}
+                        onError={(e) => {
+                            setErrored(true);
+                        }}
                         className="h-full w-full object-cover object-center"
                         style={{
                             display: "flex",
@@ -127,7 +132,9 @@ export function TargetInfoContent({
                         <button
                             type="button"
                             disabled={isUpdating}
-                            onClick={() => updateApprovalStatus(approvalStatuses.REJECTED)}
+                            onClick={() => {
+                                updateApprovalStatus(approvalStatuses.REJECTED);
+                            }}
                             className="flex-1 cursor-pointer rounded-xl border border-flare/30 bg-flare/10 px-4 py-2.5 font-body text-sm font-semibold text-flare transition-all hover:bg-flare hover:text-ink active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-flare/50"
                         >
                             Reject
@@ -136,7 +143,9 @@ export function TargetInfoContent({
                         <button
                             type="button"
                             disabled={isUpdating}
-                            onClick={() => updateApprovalStatus(approvalStatuses.APPROVED)}
+                            onClick={() => {
+                                updateApprovalStatus(approvalStatuses.APPROVED);
+                            }}
                             className="flex-1 cursor-pointer rounded-xl bg-sage px-4 py-2.5 font-body text-sm font-bold text-ink transition-all hover:bg-sage/90 hover:shadow-lg hover:shadow-sage/10 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage/50"
                         >
                             Approve
@@ -158,7 +167,6 @@ export function TargetInfoContent({
                         onClick={handleCaptureClick}
                     />
                 </div>
-
             )}
         </div>
     );
