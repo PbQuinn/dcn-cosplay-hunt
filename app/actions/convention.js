@@ -10,6 +10,26 @@ export async function loadConventions() {
     return data;
 }
 
+export async function getCurrentConvention() {
+  const now = new Date().toISOString();
+
+  const { data: convention, error } = await supabase
+    .from("conventions")
+    .select("*")
+    .order("start_date", { ascending: true })
+    .gt("end_date", now)
+    .lt("start_date", now)
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    console.error("❌ [getCurrentConvention] Error fetching current convention:", error);
+    return null;
+  }
+
+  return convention;
+}
+
 export async function loadConvention(conventionId) {
     const { data, error } = await supabase
         .from("conventions")
