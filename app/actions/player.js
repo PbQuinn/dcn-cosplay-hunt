@@ -198,16 +198,26 @@ export async function loadPlayers(conventionId) {
 }
 
 export async function loadPlayerFromUid(playerUid) {
+    if (!playerUid) {
+        return null;
+    }
+
     const { data: player, error } = await supabase
         .from("players")
         .select("*")
-        .in("app_uid", playerUid);
+        .eq("app_uid", playerUid);
 
     if (error) {
-        console.error("Supabase Query Error:", error);
+        console.error("❌ [loadPlayerFromUid] Supabase Query Error:", {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+        });
+        return null;
     }
 
-    return player;
+    return player?.[0] || null;
 }
 
 // Load player UID from recovery code
