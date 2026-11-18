@@ -28,7 +28,7 @@ export default function AboutSection({ conventionName }) {
                 </div>
             </section>
 
-            <section className="mx-auto max-w-4xl px-6 py-2">
+            {/* <section className="mx-auto max-w-4xl px-6 py-2">
                 <div className="card-shell">
                     <p className="eyebrow mb-3">Who are we?</p>
                     <h2 className="font-display text-3xl font-bold sm:text-4xl">
@@ -66,7 +66,7 @@ export default function AboutSection({ conventionName }) {
                         </div>
                     </div>
                 </div>
-            </section>
+            </section> */}
         </>
     );
 }
