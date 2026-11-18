@@ -6,6 +6,7 @@ import { useAdminSession } from "@/lib/useAdminSession";
 import { usePolling } from "@/lib/usePolling";
 import { SubmissionList, ApprovalList } from "./components/PlayerLists";
 import LeaderBoard from "./components/LeaderBoard";
+import { ConventionInfo } from "./components/ConventionInfo";
 import { loadPlayerLists } from "@/app/actions/player";
 import { Modal } from "@/app/c/[conventionId]/player/[playerUid]/components/ui/Modal";
 import { TargetInfoContent } from "@/app/c/[conventionId]/player/[playerUid]/components/modals/TargetInfoModal";
@@ -60,6 +61,7 @@ export default function AdminDashboard({ convention }) {
     { id: "approval", label: `Approval (${approval.length})` },
     { id: "submissions", label: `Submissions (${submissions.length})` },
     { id: "leaderboard", label: `Leaderboard` },
+    { id: "convention", label: `Convention` },
   ];
 
   const handleTabChange = (tabId) => {
@@ -113,6 +115,7 @@ export default function AdminDashboard({ convention }) {
           onSelectPlayer={handleSelectPlayer}
         />
       )}
+      {tab === "convention" && <ConventionInfo convention={convention} />}
 
       {/* Display view */}
       <div className="mt-10 mb-4">
