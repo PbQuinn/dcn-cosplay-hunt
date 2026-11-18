@@ -1,12 +1,37 @@
 "use client";
 
-import { UserRound, ChevronRight } from "lucide-react";
+import { UserRound, ChevronRight, Minus, Check, X } from "lucide-react";
 import Avatar from "./components/ui/Avatar";
+
+// ---------------------------------------------------------------------------
+// Status badge configuration
+// ---------------------------------------------------------------------------
+const APPROVAL_STATUS = {
+    0: {
+        label: "Pending approval",
+        bg: "bg-amber-500",
+        Icon: Minus,
+    },
+    1: {
+        label: "Approved",
+        bg: "bg-emerald-500",
+        Icon: Check,
+    },
+    2: {
+        label: "Rejected",
+        bg: "bg-rose-500",
+        Icon: X,
+    },
+};
 
 // ---------------------------------------------------------------------------
 // Top mission bar
 // ---------------------------------------------------------------------------
 export function MissionBar({ hunter, score, photoUrl, onOpenProfile }) {
+    // Fallback to 0 (Pending) if hunter.approved is undefined/null
+    const status = APPROVAL_STATUS[hunter?.approved] ?? APPROVAL_STATUS[0];
+    const StatusIcon = status.Icon;
+
     return (
         <header className="sticky top-0 z-30 flex items-center gap-2.5 border-b border-parchment/10 bg-ink/90 px-4 pb-2.5 pt-[calc(10px+env(safe-area-inset-top))] backdrop-blur-md">
             <button
@@ -21,6 +46,15 @@ export function MissionBar({ hunter, score, photoUrl, onOpenProfile }) {
                 />
                 <span className="rounded-lg border border-parchment/10 bg-ink-light px-2.5 py-1 font-mono text-[15px] tracking-wide text-parchment">
                     Your code: {hunter?.code ? String(hunter.code).padStart(4, "0") : "----"}
+                </span>
+
+                {/* Profile Status Indicator */}
+                <span
+                    title={status.label}
+                    aria-label={status.label}
+                    className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-white shadow-sm ${status.bg}`}
+                >
+                    <StatusIcon size={12} strokeWidth={3} />
                 </span>
             </button>
 
