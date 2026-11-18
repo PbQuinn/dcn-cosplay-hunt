@@ -10,25 +10,6 @@ import { CaptureButton } from "./CaptureModal";
 import { DetailRow } from "../ui/DetailedRow";
 import { getPhotoUrl } from "@/lib/getPhotoUrl";
 
-// Helper to determine the photo endpoint URL
-function getPhotoUrl(target) {
-    if (!target) return null;
-
-    // If target already has an explicit photo route or relative path provided by parent
-    if (target.photoUrl) return target.photoUrl;
-
-    // Build route URL if target has convention_id and app_uid / id
-    const conventionId = target.convention_id || target.conventionId;
-    const playerUid = target.app_uid || target.appUid;
-
-    if (conventionId && playerUid) {
-        return `/c/${conventionId}/player/${playerUid}/photo`;
-    }
-
-    // Fall back to image_url if it's already an absolute or valid relative path
-    return target.image_url || null;
-}
-
 // ---------------------------------------------------------------------------
 // Modal contents
 // ---------------------------------------------------------------------------
