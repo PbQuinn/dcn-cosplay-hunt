@@ -2,8 +2,11 @@
 
 import Link from "next/link";
 import { formatTextDate, formatCompactTime } from "@/lib/formatDateTime";
+import { useState } from "react";
 
 export default function HeroSection({ convention, hunter, onJoinClick }) {
+    const [imgError, setImgError] = useState(false);
+
     const formattedDate = formatTextDate(convention?.start_date);
     const startTime = formatCompactTime(convention?.start_date);
     const endTime = formatCompactTime(convention?.end_date);
@@ -18,11 +21,14 @@ export default function HeroSection({ convention, hunter, onJoinClick }) {
         <section className="relative flex min-h-[70vh] items-center justify-center overflow-hidden">
             <div className="absolute inset-0">
                 <div className="flex h-full w-full items-center justify-center bg-parchment/5">
-                    <img
-                        src={convention?.id ? `/c/${convention.id}/logo` : ""}
-                        alt={convention?.name}
-                        className="mx-auto block h-auto w-4/5 object-contain opacity-30"
-                    />
+                    {convention?.id && convention?.logo_url && !imgError && (
+                        <img
+                            src={`/c/${convention.id}/logo`}
+                            alt={convention?.name || ""}
+                            onError={() => setImgError(true)}
+                            className="mx-auto block h-auto w-4/5 object-contain opacity-30"
+                        />
+                    )}
                 </div>
                 <div className="absolute inset-0 bg-black/60" />
             </div>
