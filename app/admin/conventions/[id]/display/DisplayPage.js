@@ -7,7 +7,7 @@ import { approvalStatuses, REFRESH_PERIOD } from "@/lib/constants";
 import { usePolling } from "@/lib/usePolling";
 import { loadCaptures } from "@/app/actions/target";
 import { loadPlayers, loadPlayerFromUid } from "@/app/actions/player";
-import LeaderBoard from "../LeaderBoard";
+import LeaderBoard from "../components/LeaderBoard";
 
 import HowToPlaySection from "./components/HowToPlaySection";
 import LatestCapturesSection from "./components/LatestCapturesSection";
