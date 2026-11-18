@@ -56,7 +56,7 @@ export default function HeroSection({ convention, hunter, onJoinClick, onOpenRec
                         </button>
 
                         <p className="mx-auto mt-4 max-w-2xl text-sm text-gray-500">
-                            Lost your account? Go to the DCN stand{convention?.stand_location && ` (${convention.stand_location})`} and{" "}
+                            Lost your account? Visit our stand{convention?.stand_location && ` (${convention.stand_location})`} and{" "}
                             <button
                                 type="button"
                                 className="text-primary underline hover:opacity-80"
