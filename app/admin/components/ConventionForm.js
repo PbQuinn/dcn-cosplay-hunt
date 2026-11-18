@@ -108,7 +108,7 @@ export default function ConventionForm({ onConventionCreated }) {
                 </div>
                 <div>
                     <label className="eyebrow mb-2 block" htmlFor="stand_location">
-                        DCN stand location
+                        Stand location
                     </label>
                     <input
                         id="stand_location"
