@@ -94,16 +94,22 @@ export default function AdminDashboard({ convention }) {
       <p className="eyebrow mb-3">Admin · Convention</p>
       <h1 className="mb-8 text-4xl font-bold">{convention.name}</h1>
 
-      <div className="mb-6 flex gap-2 border-b border-parchment/10 pb-4">
+      <div className="mb-6 flex items-center border-b border-parchment/10 pb-4">
         {tabs.map((t, i) => (
-          <button
-            key={`${t.id}-${i}`}
-            onClick={() => handleTabChange(t.id)}
-            className={`font-mono text-xs uppercase tracking-wide ${tab === t.id ? "text-flare" : "text-parchment/50 hover:text-parchment"
-              }`}
-          >
-            {t.label}
-          </button>
+          <div key={t.id} className="flex items-center">
+            {i > 0 && (
+              <span className="mx-4 text-parchment/20 select-none" aria-hidden="true">
+                |
+              </span>
+            )}
+            <button
+              onClick={() => handleTabChange(t.id)}
+              className={`font-mono text-xs uppercase tracking-wide ${tab === t.id ? "text-flare" : "text-parchment/50 hover:text-parchment"
+                }`}
+            >
+              {t.label}
+            </button>
+          </div>
         ))}
       </div>
 
