@@ -5,6 +5,7 @@ import { RefreshCcw } from "lucide-react";
 import { NR_TARGETS, REFRESH_COOLDOWN_MILLISECONDS } from "@/lib/constants";
 import { performCapture, requestFreshTargetAssignment } from "@/app/actions/target";
 import { updatePlayerLastRefresh } from "@/app/actions/player";
+import { formatNumber } from "@/lib/formatNumber";
 
 // UI Components & Cards
 import { MissionBar } from "./MissionBar";
