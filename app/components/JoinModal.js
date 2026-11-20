@@ -95,49 +95,6 @@ export default function JoinModal({ convention, onClose }) {
                 </div>
 
                 <form onSubmit={handleSubmit} className="space-y-5">
-                    <div>
-                        <label className="eyebrow mb-2 block" htmlFor="participant-name">
-                            Display name
-                        </label>
-                        <input
-                            id="participant-name"
-                            className="field-input"
-                            type="text"
-                            placeholder="Name on leaderboard"
-                            value={form.name}
-                            onChange={(e) => updateForm("name", e.target.value)}
-                            required
-                        />
-                    </div>
-
-                    <div>
-                        <label className="eyebrow mb-2 block" htmlFor="participant-contact">
-                            Socials
-                        </label>
-                        <input
-                            id="participant-contact"
-                            className="field-input"
-                            type="text"
-                            placeholder="Instagram, Discord, E-mail, etc."
-                            value={form.contact}
-                            onChange={(e) => updateForm("contact", e.target.value)}
-                        />
-                    </div>
-
-                    <div>
-                        <label className="eyebrow mb-2 block" htmlFor="description">
-                            Description
-                        </label>
-                        <textarea
-                            id="description"
-                            className="field-input"
-                            rows={4}
-                            placeholder="Anything else you'd like hunters to know..."
-                            value={form.description}
-                            onChange={(e) => updateForm("description", e.target.value)}
-                        />
-                    </div>
-
                     <div className="rounded-lg border border-parchment/10 p-4">
                         <label htmlFor="invisible" className="flex cursor-pointer items-start gap-3">
                             <input
@@ -207,6 +164,51 @@ export default function JoinModal({ convention, onClose }) {
                             </div>
                         </>
                     )}
+
+                    <div>
+                        <label className="eyebrow mb-2 block" htmlFor="participant-name">
+                            Nickname
+                        </label>
+                        <input
+                            id="participant-name"
+                            className="field-input"
+                            type="text"
+                            placeholder="Name on leaderboard"
+                            value={form.name}
+                            onChange={(e) => updateForm("name", e.target.value)}
+                            required
+                        />
+                    </div>
+
+                    <div>
+                        <label className="eyebrow mb-2 block" htmlFor="participant-contact">
+                            Socials
+                        </label>
+                        <input
+                            id="participant-contact"
+                            className="field-input"
+                            type="text"
+                            placeholder="Instagram, Discord, TikTok, E-mail, etc."
+                            value={form.contact}
+                            onChange={(e) => updateForm("contact", e.target.value)}
+                        />
+                    </div>
+
+                    <div>
+                        <label className="eyebrow mb-2 block" htmlFor="description">
+                            Description
+                        </label>
+                        <textarea
+                            id="description"
+                            className="field-input"
+                            rows={4}
+                            placeholder="Anything else you'd like hunters to know..."
+                            value={form.description}
+                            onChange={(e) => updateForm("description", e.target.value)}
+                        />
+                    </div>
+
+
 
                     {error && <p className="text-sm text-flare">{error}</p>}
 
