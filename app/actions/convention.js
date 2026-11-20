@@ -125,24 +125,23 @@ export async function removeConvention(conventionId) {
 // Load convention data
 export async function loadConventions() {
 
-    const { data, error } = await supabase
-        .from("conventions")
-        .select("id, name, start_date, end_date")
-        .order("start_date", { ascending: true });
-    return data;
+  const { data, error } = await supabase
+    .from("conventions")
+    .select("id, name, start_date, end_date")
+    .order("start_date", { ascending: true });
+  return data;
 }
 
 export async function getCurrentConvention() {
     const now = new Date().toISOString();
 
-    const { data: convention, error } = await supabase
-        .from("conventions")
-        .select("*")
-        .order("start_date", { ascending: true })
-        .gt("end_date", now)
-        .lt("start_date", now)
-        .limit(1)
-        .maybeSingle();
+  const { data: convention, error } = await supabase
+    .from("conventions")
+    .select("*")
+    .order("start_date", { ascending: true })
+    .gt("end_date", now)
+    .limit(1)
+    .maybeSingle();
 
     if (error) {
         console.error("❌ [getCurrentConvention] Error fetching current convention:", error);

@@ -1,8 +1,12 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { formatTextDate, formatCompactTime } from "@/lib/formatDateTime";
-import { useState } from "react";
+import {
+    formatTextDate,
+    formatCompactTime,
+    getCountdownParts,
+} from "@/lib/formatDateTime";
 
 export default function HeroSection({ convention, hunter, onJoinClick }) {
     const [imgError, setImgError] = useState(false);
@@ -10,6 +14,45 @@ export default function HeroSection({ convention, hunter, onJoinClick }) {
     const formattedDate = formatTextDate(convention?.start_date);
     const startTime = formatCompactTime(convention?.start_date);
     const endTime = formatCompactTime(convention?.end_date);
+
+    const [now, setNow] = useState(null);
+    const wasCountingDownRef = useRef(false);
+    const hasReloadedRef = useRef(false);
+
+    useEffect(() => {
+        if (!convention?.start_date) return;
+
+        const targetMs = new Date(convention.start_date).getTime();
+        if (Number.isNaN(targetMs)) return;
+
+        const initialNow = Date.now();
+        setNow(initialNow);
+
+        if (initialNow < targetMs) {
+            wasCountingDownRef.current = true;
+        }
+
+        const intervalId = setInterval(() => {
+            const current = Date.now();
+            setNow(current);
+
+            if (current >= targetMs) {
+                clearInterval(intervalId);
+
+                if (wasCountingDownRef.current && !hasReloadedRef.current) {
+                    hasReloadedRef.current = true;
+                    window.location.reload();
+                }
+            }
+        }, 1000);
+
+        return () => clearInterval(intervalId);
+    }, [convention?.start_date]);
+
+    const countdown =
+        now === null
+            ? { isStarted: true, formatted: "00:00:00:00" }
+            : getCountdownParts(convention?.start_date, now);
 
     const handleJoinClick = (e) => {
         if (onJoinClick) {
@@ -51,7 +94,19 @@ export default function HeroSection({ convention, hunter, onJoinClick }) {
                     Find the characters. Meet the cosplayers. Complete the hunt.
                 </p>
 
-                {!hunter ? (
+                {!countdown.isStarted ? (
+                    <div className="mt-10">
+                        <p className="eyebrow mb-4">
+                            Starts In
+                        </p>
+                        <p
+                            className="font-mono text-4xl font-bold tracking-wider text-white tabular-nums sm:text-6xl"
+                            aria-live="polite"
+                        >
+                            {countdown.formatted}
+                        </p>
+                    </div>
+                ) : !hunter ? (
                     <button
                         type="button"
                         className="btn-primary mt-10 px-8 py-4 text-lg"
