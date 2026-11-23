@@ -124,7 +124,7 @@ export default function AdminDashboard({ convention }) {
       {tab === "convention" && <ConventionInfo convention={convention} />}
 
       {/* Display view */}
-      <div className="mt-10 mb-4">
+      <div className="mt-10 mb-4 border-t border-parchment/10 pt-4">
         <Link href={`/admin/conventions/${conventionId}/display`}>
           <button type="button" className="btn-primary">
             Switch to Display view
