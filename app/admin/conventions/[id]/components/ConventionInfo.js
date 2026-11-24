@@ -86,6 +86,9 @@ export function ConventionInfo({ convention }) {
                                     type="button"
                                     aria-label={`Delete ${convention.name}`}
                                     onClick={() => {
+                                        if (convention?.logo_url == null || convention.logo_url.trim() === "") {
+                                            return;
+                                        }
                                         setError("");
                                         setLogoToDelete(convention);
                                     }}
