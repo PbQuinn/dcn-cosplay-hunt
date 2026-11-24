@@ -12,7 +12,7 @@ import { TargetCard } from "./components/cards/TargetCard";
 import { RequestNewTargetCard } from "./components/cards/RequestNewTargetCard";
 
 // Modals & Shells
-import { Modal } from "./components/ui/Modal";
+import { Modal } from "@/lib/modals/Modal";
 import { TargetInfoContent } from "./components/modals/TargetInfoModal";
 import { CaptureContent } from "./components/modals/CaptureModal";
 import { HunterProfileContent } from "./components/modals/HunterProfileModal";

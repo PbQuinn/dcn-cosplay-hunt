@@ -4,7 +4,7 @@ import { useState } from "react";
 import { CircleAlert, CircleCheck, Camera, Check } from "lucide-react";
 import { Eyebrow } from "../ui/Eyebrow";
 import { CodeDigitsInput } from "../../CodeDigitsInput";
-import { ModalCloseButton } from "../ui/Modal";
+import { ModalCloseButton } from "@/lib/modals/Modal";
 import { checkPlayerCode } from "@/app/actions/target";
 
 export function CaptureContent({ conventionId, hunter, target, onClose, onSuccess }) {

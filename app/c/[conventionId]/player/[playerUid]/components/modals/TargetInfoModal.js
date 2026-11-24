@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Eyebrow } from "../ui/Eyebrow";
-import { ModalCloseButton } from "../ui/Modal";
+import { ModalCloseButton } from "@/lib/modals/Modal";
 import { initialsFor } from "../utils/hunterUtils";
 import { approvalStatusLabels, approvalStatuses } from "@/lib/constants";
 import { updatePlayerApproval } from "@/app/actions/player";

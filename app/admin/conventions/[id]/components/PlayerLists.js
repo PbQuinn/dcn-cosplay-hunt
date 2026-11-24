@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { approvalStatusLabels } from "@/lib/constants";
 import { formatDateTime } from "@/lib/formatDateTime";
-import { Modal } from "@/app/c/[conventionId]/player/[playerUid]/components/ui/Modal";
+import { Modal } from "@/lib/modals/Modal";
 import { TargetInfoContent } from "@/app/c/[conventionId]/player/[playerUid]/components/modals/TargetInfoModal";
 
 // Helper to construct full target object with computed photo URL

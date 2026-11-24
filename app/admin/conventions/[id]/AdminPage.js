@@ -8,7 +8,7 @@ import { SubmissionList, ApprovalList } from "./components/PlayerLists";
 import LeaderBoard from "./components/LeaderBoard";
 import { ConventionInfo } from "./components/ConventionInfo";
 import { loadPlayerLists } from "@/app/actions/player";
-import { Modal } from "@/app/c/[conventionId]/player/[playerUid]/components/ui/Modal";
+import { Modal } from "@/lib/modals/Modal";
 import { TargetInfoContent } from "@/app/c/[conventionId]/player/[playerUid]/components/modals/TargetInfoModal";
 
 export default function AdminDashboard({ convention }) {

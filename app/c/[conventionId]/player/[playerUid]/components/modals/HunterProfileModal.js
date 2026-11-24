@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Eyebrow } from "../ui/Eyebrow";
 import Avatar from "../ui/Avatar";
-import { ModalCloseButton } from "../ui/Modal";
+import { ModalCloseButton } from "@/lib/modals/Modal";
 import { updatePlayerVisibility, removePlayerPhotoFromUid } from "@/app/actions/player";
 import { DetailRow } from "../ui/DetailedRow";
 

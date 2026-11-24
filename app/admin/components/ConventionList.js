@@ -5,7 +5,7 @@ import Link from "next/link";
 import { X } from "lucide-react";
 import { formatNumberDate } from "@/lib/formatDateTime";
 import { removeConvention } from "@/app/actions/convention";
-import { Modal, ModalCloseButton } from "@/app/c/[conventionId]/player/[playerUid]/components/ui/Modal";
+import ConfirmationModal from "@/lib/modals/ConfirmationModal";
 
 export default function ConventionList({ conventions, fetching, onConventionDeleted }) {
     const [conventionToDelete, setConventionToDelete] = useState(null);
@@ -79,41 +79,18 @@ export default function ConventionList({ conventions, fetching, onConventionDele
 
             {/* Deletion Confirmation Modal */}
             {conventionToDelete && (
-                <Modal labelledBy="delete-convention-title" onClose={() => setConventionToDelete(null)}>
-                    <div className="relative pt-1 text-center">
-                        <ModalCloseButton onClose={() => setConventionToDelete(null)} />
-
-                        <h3 id="delete-convention-title" className="font-display text-2xl font-bold mb-3 text-parchment mt-2">
-                            Delete Convention?
-                        </h3>
-                        <p className="font-body text-sm text-parchment/70 mb-4">
-                            Are you sure you want to delete <b className="text-parchment">{conventionToDelete.name}</b>? This action cannot be undone.
-                        </p>
-
-                        {error && (
-                            <p className="text-sm text-flare mb-4 font-body">{error}</p>
-                        )}
-
-                        <div className="flex items-center justify-center gap-3 pb-2">
-                            <button
-                                type="button"
-                                className="btn-secondary px-4 py-2 text-sm"
-                                onClick={() => setConventionToDelete(null)}
-                                disabled={deleting}
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                type="button"
-                                className="px-4 py-2 text-sm rounded-xl bg-red-600/80 hover:bg-red-600 text-white font-medium transition-colors disabled:opacity-50"
-                                onClick={handleDeleteConfirm}
-                                disabled={deleting}
-                            >
-                                {deleting ? "Deleting..." : "Yes, delete"}
-                            </button>
-                        </div>
-                    </div>
-                </Modal>
+                <ConfirmationModal
+                    isOpen={Boolean(conventionToDelete)}
+                    onClose={() => setConventionToDelete(null)}
+                    onConfirm={handleDeleteConfirm}
+                    title="Delete Convention?"
+                    itemName={conventionToDelete?.name}
+                    confirmLabel="Yes, delete"
+                    loadingLabel="Deleting..."
+                    isLoading={deleting}
+                    error={error}
+                    variant="danger"
+                />
             )}
         </section>
     );

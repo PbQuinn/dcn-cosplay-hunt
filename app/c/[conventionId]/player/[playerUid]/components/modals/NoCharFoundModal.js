@@ -1,6 +1,6 @@
 "use client";
 
-import { ModalCloseButton } from "../ui/Modal";
+import { ModalCloseButton } from "@/lib/modals/Modal";
 
 // ---------------------------------------------------------------------------
 // No character found, user caught call currently available characters
