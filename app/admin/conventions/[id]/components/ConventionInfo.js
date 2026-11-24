@@ -116,9 +116,17 @@ export function ConventionInfo({ convention }) {
                     </section>
                 </div>
 
-                <div className="mt-10 mb-4 border-parchment/10 flex justify-center">
+                <div className="mt-10 mb-4 border-parchment/10 flex flex-wrap items-center justify-center gap-10">
+                    <button type="submit" className="px-4 py-2 text-sm rounded-xl font-medium transition-colors disabled:opacity-50 bg-red-600/80 hover:bg-red-600 text-white" disabled={saving}>
+                        Remove all players
+                    </button>
+
                     <button type="submit" className="btn-primary" disabled={saving}>
                         Submit changes
+                    </button>
+
+                    <button type="submit" className="btn-secondary px-4 py-2 text-sm" disabled={saving}>
+                        Export data
                     </button>
                 </div>
             </form>
