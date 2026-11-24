@@ -1,19 +1,23 @@
-import { Eyebrow } from "app/c/[conventionId]/player/[playerUid]/components/ui/Eyebrow";
+import { useState } from "react";
 import { formatDateTime } from "@/lib/formatDateTime";
 import Avatar from "@/app/c/[conventionId]/player/[playerUid]/components/ui/Avatar";
 import { X } from "lucide-react";
 import { InputRow } from "@/lib/visual/InputRow";
 
 export function ConventionInfo({ convention }) {
+    const [saving, setSaving] = useState(false);
 
     function handlePhotoChange(e) {
         updateForm("photo", e.target.files?.[0] ?? null);
     }
 
+    async function handleSubmit(e) { }
+
     return (
-        <div className="mt-4">
+        <form onSubmit={handleSubmit} className="space-y-5">
 
             <div className="grid w-full min-h-0 grid-cols-2 gap-4 items-stretch">
+                
                 <section className="flex min-h-0 min-w-0 h-full w-full flex-col items-center justify-between gap-4 p-1 text-center">
                     <div className="flex min-h-0 w-full flex-1 items-center justify-center">
                         <Avatar
@@ -64,7 +68,13 @@ export function ConventionInfo({ convention }) {
                     </div>
                 </section>
             </div>
-        </div>
+
+            <div className="mt-10 mb-4 border-parchment/10 flex justify-center">
+                <button type="submit" className="btn-primary disabled={saving}">
+                    Submit changes
+                </button>
+            </div>
+        </form>
     )
 }
 
