@@ -108,7 +108,7 @@ export function ConventionInfo({ convention }) {
                                 <InputRow label="Theme" value={convention?.theme} name="theme" placeholder="Convention theme" />
                                 <InputRow label="Venue" value={convention?.venue} name="venue" placeholder="Convention venue" required={true} />
                                 <InputRow label="Address" value={convention?.address} name="address" placeholder="Convention address" />
-                                <InputRow label="Stand location" value={convention?.stand_location} name="stand_location" placeholder="Convention stand location" required={true} />
+                                <InputRow label="Stand location" value={convention?.stand_location} name="stand_location" placeholder="Convention stand location" />
                                 <InputRow label="Start date" value={formatDateTime(convention?.start_date)} name="start_date" placeholder="Convention start date" required={true} type="datetime-local" />
                                 <InputRow label="End date" value={formatDateTime(convention?.end_date)} name="end_date" placeholder="Convention end date" required={true} type="datetime-local" />
                             </dl>
@@ -117,7 +117,7 @@ export function ConventionInfo({ convention }) {
                 </div>
 
                 <div className="mt-10 mb-4 border-parchment/10 flex flex-wrap items-center justify-center gap-10">
-                    <button type="submit" className="px-4 py-2 text-sm rounded-xl font-medium transition-colors disabled:opacity-50 bg-red-600/80 hover:bg-red-600 text-white" disabled={saving}>
+                    <button type="button" className="px-4 py-2 text-sm rounded-xl font-medium transition-colors disabled:opacity-50 bg-red-600/80 hover:bg-red-600 text-white" disabled={saving}>
                         Remove all players
                     </button>
 
@@ -125,7 +125,7 @@ export function ConventionInfo({ convention }) {
                         Submit changes
                     </button>
 
-                    <button type="submit" className="btn-secondary px-4 py-2 text-sm" disabled={saving}>
+                    <button type="button" className="btn-secondary px-4 py-2 text-sm" disabled={saving}>
                         Export data
                     </button>
                 </div>
