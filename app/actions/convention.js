@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabaseServer";
 import { randomUUID } from "crypto";
 import { removeCaptures } from "./target";
 import { removePlayers } from "./player";
+import { zonedDateTimeToUtcIso } from "@/lib/convertTime";
 
 // Create convention data
 export async function createConvention(formData) {
@@ -12,8 +13,15 @@ export async function createConvention(formData) {
 
   // Required fields
   const name = formData.get("name");
-  const start_date = formData.get("start_date");
-  const end_date = formData.get("end_date");
+  const rawStartDate = formData.get("start_date")?.toString() || "";
+  const rawEndDate = formData.get("end_date")?.toString() || "";
+
+  const start_date = zonedDateTimeToUtcIso(rawStartDate);
+  const end_date = zonedDateTimeToUtcIso(rawEndDate);
+
+  if (!start_date || !end_date) {
+    throw new Error("Start and end dates are required.");
+  }
 
   // Optional fields
   const theme = formData.get("theme");
@@ -53,15 +61,15 @@ export async function createConvention(formData) {
 
   const newRow = {
     id: conventionId,
-    name: name.toString().trim() || "",
-    theme: theme.toString().trim() || "",
+    name: name?.toString().trim() || "",
+    theme: theme?.toString().trim() || "",
     logo_url: logoPath,
     start_date,
     end_date,
     created_at: new Date().toISOString(),
-    venue: venue.toString().trim() || "",
-    address: address.toString().trim() || "",
-    stand_location: stand_location.toString().trim() || "",
+    venue: venue?.toString().trim() || "",
+    address: address?.toString().trim() || "",
+    stand_location: stand_location?.toString().trim() || "",
   };
 
   const dbStartTime = performance.now();
