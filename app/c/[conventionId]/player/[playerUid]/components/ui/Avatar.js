@@ -1,10 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { initialsFor } from "../utils/hunterUtils";
 
 export default function Avatar({ src, name, className = "h-10 w-10 rounded-full text-xs" }) {
   const [errored, setErrored] = useState(false);
+
+  useEffect(() => {
+    setErrored(false);
+  }, [src]);
 
   // Treats null, undefined, empty string "", or failed load (errored) as false
   const showImage = Boolean(src?.trim?.() ?? src) && !errored;

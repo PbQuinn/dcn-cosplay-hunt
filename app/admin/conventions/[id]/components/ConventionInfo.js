@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { formatDateTime } from "@/lib/formatDateTime";
 import Avatar from "@/app/c/[conventionId]/player/[playerUid]/components/ui/Avatar";
 import { X } from "lucide-react";
@@ -9,10 +10,15 @@ import ConfirmationModal from "@/lib/modals/ConfirmationModal";
 import { removeConventionLogo } from "@/app/actions/convention";
 
 export function ConventionInfo({ convention }) {
+    const router = useRouter();
     const [saving, setSaving] = useState(false);
     const [logoToDelete, setLogoToDelete] = useState(null);
     const [deleting, setDeleting] = useState(false);
     const [error, setError] = useState("");
+    const [logoVersion, setLogoVersion] = useState(0);
+    const [hasLogo, setHasLogo] = useState(
+        Boolean(convention?.logo_url && convention.logo_url.trim() !== "")
+    );
 
     function handlePhotoChange(e) {
         const file = e.target.files?.[0] ?? null;
@@ -48,7 +54,10 @@ export function ConventionInfo({ convention }) {
                 throw new Error("Failed to delete the convention logo.");
             }
 
+            setHasLogo(false);
+            setLogoVersion((prev) => prev + 1);
             setLogoToDelete(null);
+            router.refresh();
         } catch (err) {
             console.error("Deletion process failed:", err);
             setError(err?.message || "An unexpected error occurred.");
@@ -64,7 +73,8 @@ export function ConventionInfo({ convention }) {
                     <section className="flex min-h-0 min-w-0 h-full w-full flex-col items-center justify-between gap-4 p-1 text-center">
                         <div className="flex min-h-0 w-full flex-1 items-center justify-center">
                             <Avatar
-                                src={`/c/${convention.id}/logo`}
+                                key={`${convention.id}-${logoVersion}`}
+                                src={`/c/${convention.id}/logo?v=${logoVersion}`}
                                 name={convention?.name}
                                 className="h-full max-h-80 aspect-square max-w-full rounded-xl"
                             />
